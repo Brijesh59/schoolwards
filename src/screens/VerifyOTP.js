@@ -10,6 +10,7 @@ import APIs           from '../utils/api'
 import app_config     from '../utils/config'
 import CustomButton   from '../components/common/CustomButton'
 import Input          from '../components/common/Input'
+import NetworkRequest from '../utils/NetworkRequest';
 
 
 const VerifyOTP = (props) => {
@@ -82,35 +83,31 @@ const VerifyOTP = (props) => {
         formData.append('otp', OTP)
         formData.append('app_version', app_config.version)
         formData.append('appname', app_config.schoolName)
-
-        console.log('Requesting Login for...', formData)
         
-        axios.post(APIs.VERIFY_OTP, formData, {
-            headers: {
-                'content-type': 'multipart/form-data'
-            }
-        })
-        .then(async(res) => {
-            setIsLoding(false)
-            const response = res.data.response
-            console.log("Response: " , res.data)
-            if(response === 'success'){
-                console.log('Login Success.')  
-                await setUserLoggedIn(res.data.students, res.data.common_events)
-                await AsyncStorage.setItem('mobile', mobileNo)
-                Actions.dashboard();
-            }
-            else{
-                console.log('Login Failed => ', response)
-                setShowErrorMessage(response)  
-            }
-        })
-        .catch(err => {
-            setIsLoding(false)
-            console.log('Server/Network Error => ', err)
-            setShowErrorMessage(err.toString())
-        })
+        const networkRequest = new NetworkRequest
+        const data = await networkRequest.verifyOTP(formData)
+        setIsLoding(false)
+        if(data.response === 'success'){
+            console.log('Login Success.')  
+            await setUserLoggedIn(data.students, data.common_events)
+            await AsyncStorage.setItem('mobile', mobileNo)
 
+            // update device id on server
+            let formData = new FormData();
+            formData.append('mobile_no', mobileNo)
+            formData.append('device_id', fcmToken)
+            formData.append('appname', app_config.schoolName)
+            const response = await networkRequest.updateFCMToken(formData)
+            console.log("Update FCM Token Resonse: ", response.status)
+            if(response.status === 'success')
+                Actions.dashboard()
+            else
+                setShowErrorMessage(response.status)
+        }
+        else{
+            console.log('Login Failed => ', data)
+            setShowErrorMessage(data)  
+        }
     } 
 
     const setUserLoggedIn = async (students, commonEvents) => {
@@ -127,6 +124,7 @@ const VerifyOTP = (props) => {
                 firstName: student.first_name,
                 name: `${student.first_name} ${student.middle_name && student.middle_name} ${student.last_name && student.last_name}` ,
                 prnNo: student.prn_no,
+                studentId: student.student_id,
                 dateOfBirth: student.dob,
                 gender: student.gender,
                 address: `${student.address}, ${student.city}, ${student.pincode}`,
@@ -148,7 +146,7 @@ const VerifyOTP = (props) => {
 
         // Saving Individual Student events
         students.forEach(student => {
-            const studentId = student.prn_no
+            const studentId = student.student_id
             const studentName = student.first_name
             student.events.forEach(event => {
                 const NIA_NDA = event.non_interaction_attributes.non_display_attributes
@@ -180,10 +178,13 @@ const VerifyOTP = (props) => {
                 to: 'all',
                 dateTime: NIA_DA.date_time,
                 attatchment: NIA_DA.url != "" ? NIA_DA.url : null,
-                venue: NIA_DA.venue
+                venue: NIA_DA.venue,
+                studentName: null,
+                studentId: null
             })
         })
 
+        console.log("Events in Verify OTP: ", JSON.stringify(dataToSave))
         await AsyncStorage.setItem('cachedData', JSON.stringify(dataToSave))
 
     }

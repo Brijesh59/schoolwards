@@ -3,30 +3,26 @@ import {StyleSheet, View, ScrollView, Dimensions} from 'react-native'
 import { Container, Content, Button, Body, Text, Card, CardItem} from 'native-base'
 import {Calendar} from 'react-native-calendars';
 import CustomHeader from '../../components/common/CustomHeader'
+import AsyncStorage from '@react-native-community/async-storage';
 
 export default function CalenderScreen() {
+    const [students, setStudents] = useState([])
+    const [events, setEvents] = useState([])
+    const [filteredEvents, setFilteredEvents] = useState([])
     const [selectedStudent, setSelectedStudent] = useState(0)
     const [selectedDate, setSelectedDate] = useState(getCurrentDate())
-    const [events, setEvents] = useState([])
     const screenWidth = Dimensions.get('window').width
     const optimumLayoutWidth = screenWidth - screenWidth/10
     
     useEffect( () => {
-        students = fetchStudentDetails()
-        const events = fetchEvents(selectedStudent, selectedDate)
-        setEvents(events)
+        async function fetchStudentsAndEvents(){
+            const cachedData = await AsyncStorage.getItem('cachedData')
+            const JSONDATA = JSON.parse(cachedData)
+            setStudents(JSONDATA.students)
+            setEvents(JSONDATA.events)
+        }
+        fetchStudentsAndEvents() 
     }, [])
-
-    useEffect( () => {
-        const events = fetchEvents(selectedStudent, selectedDate)
-        setEvents(events)
-    }, [selectedDate])
-
-    useEffect( () => {
-        const events = fetchEvents(selectedStudent, selectedDate)
-        setEvents(events)
-    }, [selectedStudent])
-
 
     function formatDate(date){
         // date = 2020-02-22
@@ -56,13 +52,31 @@ export default function CalenderScreen() {
         return date.getFullYear() + '-' + month + '-' + day
     }
 
-    const fetchEvents = (student, date) => {
-
+    function filterEventsForStudentChange(selectedStudent){
+        const filteredEvents = events.filter(e => {
+            if(!e.studentName)
+                return e
+            else
+                return e.studentName.split(' ')[0] === selectedStudent 
+        })
+        setFilteredEvents(filteredEvents)
     }
 
-    const fetchStudentDetails = () => {
-        return []
+    function filterEventsForDateChange(selectedDate){
+        const filteredEvents = events.filter(e => e.dateTime.split(' ')[0] === selectedDate)
+        setFilteredEvents(filteredEvents)
     }
+
+    function handleStudentChange(student, index){
+        setSelectedStudent(index)
+        filterEventsForStudentChange(student.firstName)
+    }
+
+    function handleDateChange(selectedDate){
+        setSelectedDate(selectedDate)
+        filterEventsForDateChange(selectedDate)
+    }
+
 
     return (
         <Container> 
@@ -79,10 +93,10 @@ export default function CalenderScreen() {
                     marginBottom: 10
                 }}>
                     {
-                        ['Soham','Shahid','Mehika','Aditya'].map((student, index) => 
+                        students.map((student, index) => 
                         (
                             <Button 
-                                key = {student}
+                                key = {student.firstName}
                                 rounded 
                                 bordered
                                 light 
@@ -91,12 +105,12 @@ export default function CalenderScreen() {
                                     styles.selectedStudent :
                                     styles.unSelectedStudent
                                 }
-                                onPress = { () => setSelectedStudent(index)} >
+                                onPress = { (student) => handleStudentChange(student, index)} >
                                     <Text style = {
                                         index === selectedStudent ?
                                         styles.selectedStudentText :
                                         styles.unSelectedStudentText
-                                    }>{ student }</Text>
+                                    }>{ student.firstName }</Text>
                             </Button>
                             
                         ))
@@ -104,19 +118,20 @@ export default function CalenderScreen() {
                 </View>
                 
                 <View style={{   
-                            borderColor: '#f2f2f2',
-                            borderWidth: 4,
-                            borderStyle:'solid',
-                            borderWidth: 2,
-                            overflow:'hidden',
-                            borderTopColor: '#2C96EA',
-                            height: 'auto',
-                            width: optimumLayoutWidth,
-                        }}>
+                        borderColor: '#f2f2f2',
+                        borderWidth: 4,
+                        borderStyle:'solid',
+                        borderWidth: 2,
+                        overflow:'hidden',
+                        borderTopColor: '#2C96EA',
+                        height: 'auto',
+                        width: optimumLayoutWidth,
+                    }}>
                     <Calendar
                         monthFormat={'MMM yyyy'}
                         hideExtraDays={true}
                         firstDay={1}
+                        minDate={getCurrentDate()}
                         onMonthChange={(month) => {console.log('month changed', month)}}
                         onPressArrowLeft={substractMonth => substractMonth()}
                         onPressArrowRight={addMonth => addMonth()}
@@ -129,9 +144,7 @@ export default function CalenderScreen() {
                             },
                             shadowOpacity: 0.4
                         }}
-                        onDayPress={
-                            (day) => setSelectedDate(day.dateString)
-                        }
+                        onDayPress={day => handleDateChange(day.dateString)}
                         markedDates = {{
                             [selectedDate]: {
                                 selected: true,
@@ -155,7 +168,7 @@ export default function CalenderScreen() {
                         snapToAlignment={'center'}
                         > 
                         {
-                            [0,1,2,3].map((event, index)=>(
+                            filteredEvents.map((event, index)=>(
                                 <Card 
                                     style={{
                                         width:
@@ -190,7 +203,7 @@ export default function CalenderScreen() {
                                                 flexWrap: 'wrap', 
                                             }}>
                                             <Text>
-                                            You may also access these  You may also access these.
+                                            {event.title}
                                             </Text>
                                         </Body>
                                     </CardItem>
@@ -204,6 +217,7 @@ export default function CalenderScreen() {
         </Container>
     )
 }
+
 const styles = StyleSheet.create({
     container: {
         // flex: 1,

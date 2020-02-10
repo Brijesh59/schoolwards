@@ -1,13 +1,14 @@
 import React from 'react'
 import {StyleSheet, TouchableOpacity, FlatList, View, Alert, AppState} from 'react-native'
 import Modal from 'react-native-modal'
-import { Container, Left, Button, Title, Body, Right, Header, Drawer, Text, Radio, ListItem, CheckBox, Footer } from 'native-base'
+import { Container, Left, Button, Title, Body, Right, Header, Drawer, Text, Radio, ListItem, CheckBox } from 'native-base'
 import { Actions }  from 'react-native-router-flux'
 import AsyncStorage from '@react-native-community/async-storage'
 import firebase from '@react-native-firebase/app';
 import '@react-native-firebase/messaging';
 
 import FirebaseConfig from '../utils/Firebase'
+import {cachePayloadData} from '../utils/functions'
 import CustomCard   from '../components/common/CustomCard'
 import SideBar      from './SideBar'
 import CustomButton from '../components/common/CustomButton'
@@ -121,25 +122,31 @@ export default class Home extends React.Component{
         this.setState({events: JSONData.events, students: JSONData.students, selectedStudents, selectedStudentsApplied })
     }
 
-    updateState = () => {
-        setTimeout(async()=>{
-            const cachedData = await AsyncStorage.getItem('cachedData')
-            const JSONDATA = JSON.parse(cachedData)
-            console.log("Updating the state ...")
-            this.setState({events: JSONDATA.events, students: JSONDATA.students})
-        }, 4000)
+    updateState = async() => {
+        console.log("Updating the Home state ...")
+        const cachedData = await AsyncStorage.getItem('cachedData')
+        const JSONDATA = JSON.parse(cachedData)
+        console.log(JSONDATA)
+        this.setState({events: JSONDATA.events, students: JSONDATA.students})
     }
 
     componentDidMount = async() => {
-        console.log("Home Component mounted")
-        AppState.addEventListener('change', this.handleAppStateChange)
-        this.getCachedData()
+        this.unsubscribe = firebase.messaging().onMessage( async remoteMessage => {
+            await cachePayloadData()
+
+            const JSONData = JSON.parse(remoteMessage.data.note)
+            const payload  = JSONData.non_interaction_attributes.display_attributes
+            await this.firebase.sendLocalNotification(payload);
+
+            this.updateState();
+        });
         const mobile = await AsyncStorage.getItem('mobile')
         this.firebase.onFirebaseTokenRefresh(mobile) 
-        this.unsubscribe = firebase.messaging().onMessage( rM => {
-            this.updateState();
-            console.log('State Updated')
-        });
+        
+        AppState.addEventListener('change', this.handleAppStateChange)
+        
+        // get the cachedData & set the state
+        this.getCachedData()   
     }
 
     handleAppStateChange = (nextAppState) => {
@@ -222,7 +229,6 @@ export default class Home extends React.Component{
             selectedStudents.push(prnNo)
             this.setState({selectedStudents})
         }
-        console.log(this.state.selectedStudents)
     }
 
     handleFilterTypeCheckBox = (type) => {
@@ -238,7 +244,6 @@ export default class Home extends React.Component{
             selectedTypes.push(type)
             this.setState({selectedTypes})
         }
-        console.log(this.state.selectedTypes)
     }
 
     handleClearAll = () => {
@@ -292,7 +297,8 @@ export default class Home extends React.Component{
     render(){
         console.log("Home Rerender")
         const filteredEvents = this.state.events
-                                    .filter(event => this.state.selectedTypesApplied.indexOf(event.type)!=-1)
+                                    .filter(event =>        
+                                        this.state.selectedTypesApplied.indexOf(event.type)!=-1)
                                     // .filter(event => this.state.selectedStudentsApplied.indexOf(event.studentName)!=-1)
                                     
         // console.log("Events: ", this.state.events)

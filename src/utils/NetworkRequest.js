@@ -28,7 +28,8 @@ export default class NetworkRequest{
         try{
             const response = await axios.post(
                 `${APIs.GET_EVENT}/${eventType}/${id}`, 
-                 formData, this.options)
+                 formData, 
+                 this.options)
             return response.data
         }
         catch(error){
@@ -39,6 +40,26 @@ export default class NetworkRequest{
     async updateRecievePushStatus(formData){
         try{
             const response = await axios.post(APIs.UPDATE_RECIEVE_PUSH_STATUS, formData, this.options)
+            return response.data
+        }
+        catch(error){
+            return error
+        }
+    }
+
+    async updateFCMToken(formData){
+        try{
+            const response = await axios.post(APIs.UPDATE_DEVICE_ID, formData, this.options)
+            return response.data
+        }
+        catch(error){
+            return error.message
+        }
+    }
+
+    async verifyOTP(formData){
+        try{
+            const response = await axios.post(APIs.VERIFY_OTP, formData, this.options)
             return response.data
         }
         catch(error){
