@@ -181,6 +181,8 @@ android {
 }
 
 dependencies {
+    implementation project(':react-native-file-viewer')
+    implementation project(':rn-fetch-blob')
     implementation project(':react-native-reanimated')
     implementation project(':react-native-gesture-handler')
     implementation fileTree(dir: "libs", include: ["*.jar"])

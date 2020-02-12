@@ -40,6 +40,10 @@ target 'SchoolwardsApp' do
 
   pod 'RNReanimated', :path => '../node_modules/react-native-reanimated'
 
+  pod 'rn-fetch-blob', :path => '../node_modules/rn-fetch-blob'
+
+  pod 'RNFileViewer', :path => '../node_modules/react-native-file-viewer'
+
   target 'SchoolwardsAppTests' do
     inherit! :search_paths
     # Pods for testing

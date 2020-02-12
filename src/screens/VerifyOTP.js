@@ -121,10 +121,10 @@ const VerifyOTP = (props) => {
         // Saving Students details
         students.forEach(student => {
             dataToSave.students.push({
-                firstName: student.first_name,
-                name: `${student.first_name} ${student.middle_name && student.middle_name} ${student.last_name && student.last_name}` ,
+                studentId: student.id,
                 prnNo: student.prn_no,
-                studentId: student.student_id,
+                firstName: student.first_name,
+                name: `${student.first_name} ${student.middle_name && student.middle_name} ${student.last_name && student.last_name}`,
                 dateOfBirth: student.dob,
                 gender: student.gender,
                 address: `${student.address}, ${student.city}, ${student.pincode}`,
@@ -146,7 +146,7 @@ const VerifyOTP = (props) => {
 
         // Saving Individual Student events
         students.forEach(student => {
-            const studentId = student.student_id
+            const studentId = student.id
             const studentName = student.first_name
             student.events.forEach(event => {
                 const NIA_NDA = event.non_interaction_attributes.non_display_attributes
@@ -159,6 +159,7 @@ const VerifyOTP = (props) => {
                     to: 'individual',
                     dateTime: NIA_DA.date_time,
                     attatchment: NIA_DA.url != "" ? NIA_DA.url : null,
+                    attatchmentExtention: NIA_NDA.type,
                     venue: NIA_DA.venue,
                     studentName: studentName,
                     studentId: studentId
@@ -178,6 +179,7 @@ const VerifyOTP = (props) => {
                 to: 'all',
                 dateTime: NIA_DA.date_time,
                 attatchment: NIA_DA.url != "" ? NIA_DA.url : null,
+                attatchmentExtention: NIA_NDA.type,
                 venue: NIA_DA.venue,
                 studentName: null,
                 studentId: null

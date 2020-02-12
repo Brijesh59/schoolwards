@@ -1,9 +1,16 @@
-import React from 'react'
-import { View, StyleSheet, Image } from 'react-native'
+import React, { useState } from 'react'
+import { View, StyleSheet, Image, Alert } from 'react-native'
 import { Card, CardItem, Left, Text, Right, Body, Button, Icon } from 'native-base'
 import {AnnouncementIcon, CalendarIcon, HomeworkIcon, MessageIcon, NewsIcon, TimetableIcon, ContactIcon, ContactsIcon, TagIcon} from './Icons'
+import { cacheFile } from '../../utils/functions'
+import AsyncStorage from '@react-native-community/async-storage'
+import FileViewer from 'react-native-file-viewer';
+import ActivityLoader from './ActivityLoader'
 
-export default function CustomCard({title, type, description, to, studentName, dateTime, onCardPressed, attatchment}) {
+export default function CustomCard({title, type, description, to, studentName, dateTime, onCardPressed, attatchment, attatchmentExtention, updateHomeState}) {
+
+    const [isAttatchDownloadSuccess, setIsAttatchDownloadSuccess] = useState(false)
+    const [downloading, setDownloading] = useState(false)
 
     const getIcon = (iconType) => {
         switch(iconType.toLowerCase()){
@@ -24,26 +31,68 @@ export default function CustomCard({title, type, description, to, studentName, d
         }
     }
     
-    const isAttatchDownloaded = (attatchName) => {
-        // look in the phone directory, if available return true, else false
-        return false
-    }
-    const openAttatchment = (
-        <Button transparent>
-            <Text>Open Attatchment</Text>
+    const openAttatchment = 
+         <Button 
+            rounded
+            style={{backgroundColor: '#F7F8F7', color: 'black',elevation:0,shadowOpacity:0,shadowColor:'transparent'}}
+            iconLeft 
+            onPress={()=>handleAttatchmentOpen()}>
+            <Icon name="attach" style={{color: '#363636', transform: [{rotateZ: '30deg'}]}}/>
+            <Text style={{color: '#363636'}}>Open</Text>
         </Button>
-    )
-    const downloadAttatchment = (
-        <>  
-            <Image 
-                style={{width:40, height:40}}
-                source={require('../../screens/assets/schoolLogo.png')} />
-            <Text style={{marginRight: 10}}>Attatchment</Text>
-            <Button transparent iconRight>
-                <Icon name="download" />
-            </Button>
-        </>
-    )
+
+    const handleAttatchmentOpen = () => {
+        console.log('Open')
+        FileViewer.open(attatchment)
+            .then(res => {})
+            .catch(error => {})
+    }
+    const downloadAttatchment = 
+        <Button 
+            rounded
+            disabled={downloading}
+            style={{backgroundColor: '#F7F8F7', color: 'black',elevation:0,shadowOpacity:0,shadowColor:'transparent'}}
+            iconLeft 
+            onPress={() => handleAttatchmentDownload()}>
+            <Icon name="attach" style={{color: '#363636', transform: [{rotateZ: '30deg'}]}}/>
+            {
+                downloading ? 
+                <ActivityLoader /> :
+                <Text style={{color: '#363636'}}>Download</Text>
+            } 
+        </Button>
+
+
+    const handleAttatchmentDownload = async() => {
+        setDownloading(true)
+        const data = await cacheFile(attatchment, attatchmentExtention).then(d => d)
+        if(data.isFileSaved){
+            await updateAttatchmentPathLocally(data.filePath) 
+            setIsAttatchDownloadSuccess(true)
+            setDownloading(false)
+            updateHomeState()  
+        }
+        else{
+            setIsAttatchDownloadSuccess(false)
+            setDownloading(false)
+        }
+    }
+
+    const updateAttatchmentPathLocally = async (filePath) => {
+        const cachedData = await AsyncStorage.getItem('cachedData')
+        const JSONData = JSON.parse(cachedData)
+        const events = JSONData.events
+        events.forEach(event => {
+            if(event.title === title && event.description === description){
+                event.attatchment = filePath
+            }
+        })
+        const dataToSave = {
+            students: [...JSONData.students],
+            events: events
+        }
+        await AsyncStorage.setItem('cachedData', JSON.stringify(dataToSave))
+    }
 
     return (
         <View>
@@ -67,10 +116,12 @@ export default function CustomCard({title, type, description, to, studentName, d
                 </CardItem>
                 <CardItem>
                     <Left>
-                        { attatchment && 
-                            isAttatchDownloaded('attatchName') ?
-                            openAttatchment :
-                            downloadAttatchment 
+                        { 
+                            attatchment != null && (
+                                attatchment.includes('http') ? 
+                                downloadAttatchment :
+                                openAttatchment 
+                            )
                         }
                     </Left>
                 </CardItem>

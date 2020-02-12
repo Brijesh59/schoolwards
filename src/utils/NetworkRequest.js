@@ -43,7 +43,7 @@ export default class NetworkRequest{
             return response.data
         }
         catch(error){
-            return error
+            return error.message
         }
     }
 

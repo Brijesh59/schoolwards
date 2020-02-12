@@ -117,9 +117,14 @@ export default class Home extends React.Component{
     getCachedData = async() => {
         const cachedData = await AsyncStorage.getItem('cachedData')
         const JSONData = JSON.parse(cachedData)
-        const selectedStudents = JSONData.students.map((student => student.name))
-        const selectedStudentsApplied = JSONData.students.map((student => student.name))
+        const selectedStudents = JSONData.students.map((student => student.firstName))
+        const selectedStudentsApplied = JSONData.students.map((student => student.firstName))
         this.setState({events: JSONData.events, students: JSONData.students, selectedStudents, selectedStudentsApplied })
+    }
+
+    getStudentName(studentId){
+        const student = this.state.students.filter(student => student.studentId == studentId)
+        return student.length > 0 ? student[0].firstName : ''
     }
 
     updateState = async() => {
@@ -296,13 +301,19 @@ export default class Home extends React.Component{
 
     render(){
         console.log("Home Rerender")
-        const filteredEvents = this.state.events
-                                    .filter(event =>        
-                                        this.state.selectedTypesApplied.indexOf(event.type)!=-1)
-                                    // .filter(event => this.state.selectedStudentsApplied.indexOf(event.studentName)!=-1)
+        const filteredEvents = 
+            this.state.events
+                .filter(event =>        
+                    this.state.selectedTypesApplied.indexOf(event.type) != -1)
+                .filter(event => 
+                    this.state.selectedStudentsApplied.indexOf(this.getStudentName(event.studentId))!=-1
+                    || event.studentId === null 
+                )
                                     
         // console.log("Events: ", this.state.events)
         // console.log("Filtered Events: ", filteredEvents)
+        // console.log("Selected Students: ", this.state.selectedStudentsApplied)
+        
         const header = 
             <Header 
                 style={styles.header}           
@@ -351,8 +362,11 @@ export default class Home extends React.Component{
                                 type={card.item.type}
                                 description={card.item.description}
                                 to={card.item.to}
-                                studentName={card.item.studentName}
+                                studentName={this.getStudentName(card.item.studentId)}
                                 dateTime={card.item.dateTime}
+                                attatchment={card.item.attatchment}
+                                attatchmentExtention={card.item.attatchmentExtention}
+                                updateHomeState={()=>this.updateState()}
                             />
                         </TouchableOpacity>
                     )
@@ -366,8 +380,8 @@ export default class Home extends React.Component{
                         isVisible={this.state.showSortModal}
                         animationIn='zoomIn'
                         animationOut="zoomOut"
-                        animationInTiming={400}
-                        animationOutTiming={400}
+                        animationInTiming={200}
+                        animationOutTiming={200}
                          backdropTransitionOutTiming={0}
                         onBackdropPress={()=>this.setState({showSortModal: false})}>
                         <View style={styles.modalContent}>     
@@ -423,8 +437,8 @@ export default class Home extends React.Component{
                     isVisible={this.state.showFilterModal}
                     animationIn='zoomIn'
                     animationOut="zoomOut"
-                    animationInTiming={400}
-                    animationOutTiming={400}
+                    animationInTiming={200}
+                    animationOutTiming={200}
                     backdropTransitionOutTiming={0} // Remove flicker
                     onBackdropPress={this.handleFilterCancel}>
                     <View style={styles.modalContent2}>     
@@ -454,11 +468,11 @@ export default class Home extends React.Component{
                                         justifyContent: 'space-between',
                                         padding: 5
                                     }}
-                                    key={student.name}>
-                                        <Text style={{color: '#707070', fontSize:16}}>{student.name}</Text>
+                                    key={student.firstName}>
+                                        <Text style={{color: '#707070', fontSize:16}}>{student.firstName}</Text>
                                         <CheckBox 
-                                            checked={this.state.selectedStudents.indexOf(student.name)!=-1 ? true : false}
-                                            onPress={()=> this.handleFilterStudentCheckBox(student.name)}
+                                            checked={this.state.selectedStudents.indexOf(student.firstName)!=-1 ? true : false}
+                                            onPress={()=> this.handleFilterStudentCheckBox(student.firstName)}
                                             />
                                     </View> 
                                 ))
