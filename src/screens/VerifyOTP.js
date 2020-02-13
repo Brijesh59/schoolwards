@@ -88,7 +88,8 @@ const VerifyOTP = (props) => {
         const data = await networkRequest.verifyOTP(formData)
         setIsLoding(false)
         if(data.response === 'success'){
-            console.log('Login Success.')  
+            console.log('Login Success.') 
+            console.log("Response:: ", JSON.stringify(data)) 
             await setUserLoggedIn(data.students, data.common_events)
             await AsyncStorage.setItem('mobile', mobileNo)
 
@@ -157,6 +158,7 @@ const VerifyOTP = (props) => {
                     description: NIA_DA.description,
                     type: NIA_DA.series,
                     to: 'individual',
+                    createdOn: NIA_DA.created_on,
                     dateTime: NIA_DA.date_time,
                     attatchment: NIA_DA.url != "" ? NIA_DA.url : null,
                     attatchmentExtention: NIA_NDA.type,
@@ -177,6 +179,7 @@ const VerifyOTP = (props) => {
                 description: NIA_DA.description,
                 type: NIA_DA.series,
                 to: 'all',
+                createdOn: NIA_DA.created_on,
                 dateTime: NIA_DA.date_time,
                 attatchment: NIA_DA.url != "" ? NIA_DA.url : null,
                 attatchmentExtention: NIA_NDA.type,

@@ -7,7 +7,8 @@ export default class NetworkRequest{
     constructor(){
         this.options = {
             headers: {
-                'content-type': 'multipart/form-data'
+                'content-type': 'multipart/form-data',
+                'Access-Control-Allow-Origin': '*'
             }
         }
     } 
@@ -39,7 +40,7 @@ export default class NetworkRequest{
 
     async updateRecievePushStatus(formData){
         try{
-            const response = await axios.post(APIs.UPDATE_RECIEVE_PUSH_STATUS, formData, this.options)
+            const response = await axios.post('http://www.schoolwards.com/schooladmin/Parentsapp/updatereceivepushstatus', formData, this.options)
             return response.data
         }
         catch(error){

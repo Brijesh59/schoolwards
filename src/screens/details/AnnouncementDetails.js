@@ -1,9 +1,82 @@
-import React from 'react'
+import React,{ useState } from 'react'
 import { View, StyleSheet } from 'react-native'
-import { Card, CardItem, Left, Text, Icon, Right, Body } from 'native-base'
+import { Card, CardItem, Left, Text, Icon, Right, Body, Button } from 'native-base'
+import AsyncStorage from '@react-native-community/async-storage'
+import FileViewer from 'react-native-file-viewer'
+
+import {AnnouncementIcon, CalendarIcon, HomeworkIcon, MessageIcon, NewsIcon, TimetableIcon, ContactIcon, ContactsIcon, TagIcon} from '../../components/common/Icons'
+import { cacheFile, formatDateTime } from '../../utils/functions'
+
+import ActivityLoader from '../../components/common/ActivityLoader'
 
 export default function AnnouncementDetails({details}) {
-    console.log(details)
+
+    const [isAttatchDownloadSuccess, setIsAttatchDownloadSuccess] = useState(false)
+    const [downloading, setDownloading] = useState(false)
+   
+    const openAttatchment = 
+         <Button 
+            rounded
+            style={{backgroundColor: '#F7F8F7', color: 'black',elevation:0,shadowOpacity:0,shadowColor:'transparent'}}
+            iconLeft 
+            onPress={()=>handleAttatchmentOpen()}>
+            <Icon name="attach" style={{color: '#363636', transform: [{rotateZ: '30deg'}]}}/>
+            <Text style={{color: '#363636'}}>Open</Text>
+        </Button>
+
+    const handleAttatchmentOpen = () => {
+        console.log('Open')
+        FileViewer.open(details.attatchment)
+            .then(res => {})
+            .catch(error => {})
+    }
+    
+    const downloadAttatchment = 
+        <Button 
+            rounded
+            disabled={downloading}
+            style={{backgroundColor: '#F7F8F7', color: 'black',elevation:0,shadowOpacity:0,shadowColor:'transparent'}}
+            iconLeft 
+            onPress={() => handleAttatchmentDownload()}>
+            <Icon name="attach" style={{color: '#363636', transform: [{rotateZ: '30deg'}]}}/>
+            {
+                downloading ? 
+                <ActivityLoader /> :
+                <Text style={{color: '#363636'}}>Download</Text>
+            } 
+        </Button>
+
+
+    const handleAttatchmentDownload = async() => {
+        setDownloading(true)
+        const data = await cacheFile(details.attatchment, details.attatchmentExtention).then(d => d)
+        if(data.isFileSaved){
+            await updateAttatchmentPathLocally(data.filePath) 
+            setIsAttatchDownloadSuccess(true)
+            setDownloading(false)
+        }
+        else{
+            setIsAttatchDownloadSuccess(false)
+            setDownloading(false)
+        }
+    }
+
+    const updateAttatchmentPathLocally = async (filePath) => {
+        const cachedData = await AsyncStorage.getItem('cachedData')
+        const JSONData = JSON.parse(cachedData)
+        const events = JSONData.events
+        events.forEach(event => {
+            if(event.title === details.title && event.description === details.description){
+                event.attatchment = filePath
+            }
+        })
+        const dataToSave = {
+            students: [...JSONData.students],
+            events: events
+        }
+        await AsyncStorage.setItem('cachedData', JSON.stringify(dataToSave))
+    }
+
     return (
         <View>
             <Card style={styles.container} >
@@ -19,10 +92,21 @@ export default function AnnouncementDetails({details}) {
                 </CardItem>
                 <CardItem >
                     <Body>
-                        <Text style={styles.description}>          
+                        <Text style={styles.description}>
                             {details.description}
                         </Text>
                     </Body>
+                </CardItem>
+                <CardItem>
+                    <Left>
+                        { 
+                            details.attatchment != null && (
+                                details.attatchment.includes('http') ? 
+                                downloadAttatchment :
+                                openAttatchment 
+                            )
+                        }
+                    </Left>
                 </CardItem>
                 <CardItem>
                     <Left>
@@ -43,11 +127,11 @@ export default function AnnouncementDetails({details}) {
                             {details.type}
                         </Text>
                     </Left>
-                    <Right>
+                    <Left>
                         <Text style={styles.normal}>
-                            {details.dateTime}
+                        {formatDateTime(details.createdOn)}
                         </Text>
-                    </Right>
+                    </Left>
                 </CardItem>
             </Card>
         </View>

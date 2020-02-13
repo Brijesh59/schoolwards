@@ -140,6 +140,7 @@ export default class Home extends React.Component{
             await cachePayloadData()
 
             const JSONData = JSON.parse(remoteMessage.data.note)
+            console.log("Notificaion Recieved: ", JSON.stringify(remoteMessage.data))
             const payload  = JSONData.non_interaction_attributes.display_attributes
             await this.firebase.sendLocalNotification(payload);
 
@@ -151,7 +152,7 @@ export default class Home extends React.Component{
         AppState.addEventListener('change', this.handleAppStateChange)
         
         // get the cachedData & set the state
-        this.getCachedData()   
+        this.getCachedData() 
     }
 
     handleAppStateChange = (nextAppState) => {
@@ -168,6 +169,10 @@ export default class Home extends React.Component{
         AppState.removeEventListener('change', this.handleAppStateChange)
         this.unsubscribe();
         console.log("Unsubscribed")
+    }
+
+    UNSAFE_componentWillReceiveProps(props, state){
+        console.log("Props: ", props)
     }
 
     closeDrawer = () => { this._drawer._root.close() }
@@ -264,12 +269,16 @@ export default class Home extends React.Component{
         switch(sortBy){
             case 'oldToNew': 
                 events = [...this.state.events]
-                                .sort((eventA, eventB) => eventA.dateTime > eventB.dateTime)
+                            .sort((eventA, eventB) => 
+                                eventA.createdOn > eventB.createdOn
+                            )
                 this.setState({events, showSortModal: false}) 
                 break;
             case 'newToOld':
                 events = [...this.state.events]
-                                .sort((eventA, eventB) => eventA.dateTime < eventB.dateTime)
+                            .sort((eventA, eventB) => 
+                                eventA.createdOn < eventB.createdOn
+                            )
                 this.setState({events, showSortModal: false})
                 break;
         }
@@ -353,7 +362,8 @@ export default class Home extends React.Component{
                             style={{width: '100%'}}
                             onPress={() => 
                                 Actions.detailsScreen({
-                                    details: card.item
+                                    details: card.item,
+                                    updateHomeState: this.updateState,
                                 })
                             }
                             >
@@ -361,9 +371,11 @@ export default class Home extends React.Component{
                                 title={card.item.title}
                                 type={card.item.type}
                                 description={card.item.description}
+                                venue={card.item.venue}
                                 to={card.item.to}
                                 studentName={this.getStudentName(card.item.studentId)}
                                 dateTime={card.item.dateTime}
+                                createdOn={card.item.createdOn}
                                 attatchment={card.item.attatchment}
                                 attatchmentExtention={card.item.attatchmentExtention}
                                 updateHomeState={()=>this.updateState()}

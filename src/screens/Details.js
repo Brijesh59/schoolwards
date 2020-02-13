@@ -10,20 +10,19 @@ import NewsDetails         from './details/NewsDetails'
 import TimetableDetails    from './details/TimetableDetails'
 import CustomHeader        from '../components/common/CustomHeader'
 
-export default function Details({ details}) {
+export default function Details({ details, updateHomeState}) {
     const showDetails = () => {
-        console.log("Showing Details: ", details)
         switch(details.type.toLowerCase()){
             case 'announcement':
-                return <AnnouncementDetails details={details} />
+                return <AnnouncementDetails details={details} updateHomeState={updateHomeState} />
             case 'event':
-                return <EventDetails details={details} />
+                return <EventDetails details={details} updateHomeState={updateHomeState}/>
             case 'homework':
-                return <HomeworkDetails details={details} />
+                return <HomeworkDetails details={details} updateHomeState={updateHomeState}/>
             case 'message':
                 return <MessageDetails details={details} />
             case 'news':
-                return <NewsDetails details={details} />
+                return <NewsDetails details={details} updateHomeState={updateHomeState}/>
             case 'timetable':
                 return <TimetableDetails details={details} />
             default: 

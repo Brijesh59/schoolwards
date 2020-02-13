@@ -3,9 +3,22 @@ import AsyncStorage from '@react-native-community/async-storage'
 import app_config from './config'
 import NetworkRequest from './NetworkRequest'
 
-export function formatDateTime(dateTime){
-    let formatedDateTime = ''
-    return formatedDateTime
+export function formatDateTime(dateTime = '2020-02-22 15:10:00'){
+    // 2020-02-22 15:10:00
+    let [fullDate, time] = dateTime.split(' ')
+    let [year, month, date ] = fullDate.split('-')
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    month = monthNames[parseInt(month) - 1]
+
+    let [hr, min, sec] = time.split(':')
+    let AM_PM = 'AM'
+
+    if(hr > 12) {
+        AM_PM = 'PM'
+        hr = hr - 12
+    }
+
+    return `${date} ${month} ${year}, ${hr}:${min} ${AM_PM}`
 }
 
 export function getTime(){
@@ -46,7 +59,7 @@ export async function cachePayloadData(){
       await AsyncStorage.setItem('cachedData', JSON.stringify(dataToSave))
       console.log("Data Cached ...")
 
-      // Notify server that Notification has been recieved ...
+      // Notify the server that Notification has been recieved ...
       const formData = new FormData()
       formData.append('mobile_no', mobile)
       formData.append('device_id', fcmToken)
@@ -125,7 +138,8 @@ async function fetchEachEvent(pendingObjects){
             description: NIA_DA.body || NIA_DA.desc,
             type: NIA_DA.series,
             to: obj.object_type ==='common' ? 'all' : 'individual',
-            dateTime: NIA_DA.created_on,
+            createdOn: NIA_DA.created_on,
+            dateTime: NIA_DA.date_time,
             attatchment: NIA_NDA.attachment_url ? NIA_NDA.attachment_url : null,
             attatchmentExtention: NIA_NDA.type,
             venue: NIA_DA.venue,

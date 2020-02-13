@@ -6,8 +6,9 @@ import { cacheFile } from '../../utils/functions'
 import AsyncStorage from '@react-native-community/async-storage'
 import FileViewer from 'react-native-file-viewer';
 import ActivityLoader from './ActivityLoader'
+import {formatDateTime} from '../../utils/functions'
 
-export default function CustomCard({title, type, description, to, studentName, dateTime, onCardPressed, attatchment, attatchmentExtention, updateHomeState}) {
+export default function CustomCard({title, type, description, to, studentName, dateTime, createdOn,onCardPressed, attatchment, attatchmentExtention, updateHomeState}) {
 
     const [isAttatchDownloadSuccess, setIsAttatchDownloadSuccess] = useState(false)
     const [downloading, setDownloading] = useState(false)
@@ -47,6 +48,7 @@ export default function CustomCard({title, type, description, to, studentName, d
             .then(res => {})
             .catch(error => {})
     }
+    
     const downloadAttatchment = 
         <Button 
             rounded
@@ -140,11 +142,11 @@ export default function CustomCard({title, type, description, to, studentName, d
                             {type}
                         </Text>
                     </Left>
-                    <Right>
+                    <Left>
                         <Text style={styles.normal}>
-                            {dateTime}
+                            {formatDateTime(createdOn)}
                         </Text>
-                    </Right>
+                    </Left>
                 </CardItem>
             </Card>
         </View>

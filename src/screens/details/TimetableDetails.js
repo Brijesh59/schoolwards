@@ -1,7 +1,7 @@
 import React from 'react'
 import { View, StyleSheet } from 'react-native'
 import { Card, CardItem, Left, Text, Icon, Right, Body } from 'native-base'
-
+import { cacheFile, formatDateTime } from '../../utils/functions'
 export default function TimetableDetails({details}) {
     console.log(details)
     return (
@@ -43,11 +43,11 @@ export default function TimetableDetails({details}) {
                             {details.type}
                         </Text>
                     </Left>
-                    <Right>
+                    <Left>
                         <Text style={styles.normal}>
-                            {details.dateTime}
+                        {formatDateTime(details.createdOn)}
                         </Text>
-                    </Right>
+                    </Left>
                 </CardItem>
             </Card>
         </View>

@@ -7,7 +7,7 @@ const CustomHeader = (props) => {
     const headerTitle = props.title
     const onPressBack = props.onPressBack ? 
                         props.onPressBack : 
-                        ()=>Actions.pop()
+                        ()=>Actions.pop({refresh:{}})
     return (
         <Header 
             style={styles.header}   androidStatusBarColor="#3295E9" 

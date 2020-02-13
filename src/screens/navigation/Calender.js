@@ -63,7 +63,8 @@ export default function CalenderScreen() {
     }
 
     function filterEventsForDateChange(selectedDate){
-        const filteredEvents = events.filter(e => e.dateTime.split(' ')[0] === selectedDate)
+        console.log("Events: ", JSON.stringify(events))
+        const filteredEvents = events.filter(e => e.dateTime && e.dateTime.split(' ')[0] === selectedDate)
         setFilteredEvents(filteredEvents)
     }
 
@@ -76,8 +77,18 @@ export default function CalenderScreen() {
         setSelectedDate(selectedDate)
         filterEventsForDateChange(selectedDate)
     }
-
-
+    let markedDates = {}
+    markedDates[selectedDate] = { selected: true }
+    events.forEach(event => {
+        event.dateTime && (
+            markedDates[event.dateTime.split(' ')[0]] = {
+                marked: true,
+                selected: event.dateTime.split(' ')[0] === selectedDate
+            }
+        )
+        
+    })
+    console.log("MarketDatess: ", markedDates)
     return (
         <Container> 
             <CustomHeader title="Calender" />
@@ -117,7 +128,8 @@ export default function CalenderScreen() {
                     }
                 </View>
                 
-                <View style={{   
+                <View 
+                    style={{   
                         borderColor: '#f2f2f2',
                         borderWidth: 4,
                         borderStyle:'solid',
@@ -145,11 +157,7 @@ export default function CalenderScreen() {
                             shadowOpacity: 0.4
                         }}
                         onDayPress={day => handleDateChange(day.dateString)}
-                        markedDates = {{
-                            [selectedDate]: {
-                                selected: true,
-                            },
-                        }}
+                        markedDates = {markedDates}
                         theme={{
                             todayTextColor: '#F8C732',
                             selectedDayBackgroundColor: '#F8C732',
@@ -168,6 +176,7 @@ export default function CalenderScreen() {
                         snapToAlignment={'center'}
                         > 
                         {
+                            filteredEvents.length > 0 ?
                             filteredEvents.map((event, index)=>(
                                 <Card 
                                     style={{
@@ -176,8 +185,8 @@ export default function CalenderScreen() {
                                         shadowOffset:{
                                             width: 0,
                                             height: 0
-                                        }
-                                        
+                                        },
+                                        shadowOpacity: 0
                                     }}
                                     key={index}> 
                                     <CardItem 
@@ -209,6 +218,9 @@ export default function CalenderScreen() {
                                     </CardItem>
                                 </Card>
                             ))
+                            :
+                            <Text>There is no Event on {formatDate(selectedDate)} </Text>
+
                         }
                     </ScrollView>
                 </View>
