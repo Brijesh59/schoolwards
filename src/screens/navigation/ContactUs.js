@@ -2,20 +2,19 @@ import React from 'react'
 import {StyleSheet, Platform, Linking, TouchableOpacity} from 'react-native'
 import { Text, Container, Content, Thumbnail, Grid, Col, Row} from 'native-base'
 import CustomHeader from '../../components/common/CustomHeader';
-
-
+import config from '../../utils/config'
+const schoolLogo = '../../assets/schoolLogo.png'
 export default function ContactUs() {
+
     const dialCall = (phoneNumber) => {
-        console.log('Dialing ...')
         let phone = ''
-        if (Platform.OS === 'android') {
+        if (Platform.OS === 'android') 
             phone = `tel:${phoneNumber}`
-        }
-        else {
+        else
             phone = `telprompt:${phoneNumber}`
-        }
         Linking.openURL(phone)
     }
+
     return (
         <Container> 
             <CustomHeader title="Contact Us" />
@@ -23,36 +22,35 @@ export default function ContactUs() {
                 contentContainerStyle={styles.container}>
                 <Thumbnail 
                     large
-                    style={styles.thumbnail} source={ require('../assets/schoolLogo.png')} />
-                <Text style={styles.name}>Swami Vivekanand School</Text>    
+                    style={styles.thumbnail} source={ require(schoolLogo)} />
+                <Text style={styles.name}>
+                    {config.schoolFullName}
+                </Text>    
                 <Grid style={styles.grid}>
                     <Row style={{height:'auto'}}>
                         <Col style={{width:'40%'}}>
-                            <Text 
-                                style={styles.key}>
+                            <Text style={styles.key}>
                                 Address :
                             </Text>
                         </Col>
                         <Col> 
-                            <Text 
-                                style={styles.value}>
-                                Swami Vivekanand School, Katraj Undri Hadaspur Bypass Road, Sai Colony, Hadaspur, Autowadi Handiwadi, Pune, Maharashtra, 411028
+                            <Text style={styles.value}>
+                                {config.address}
                             </Text>
                         </Col>
                     </Row>
                     <Row style={styles.row}>
                         <Col style={{width:'40%'}}>
-                            <Text 
-                                style={styles.key}>
+                            <Text style={styles.key}>
                                 Contact :
                             </Text>
                         </Col>
                         <Col> 
                             <TouchableOpacity 
-                                onPress={()=>dialCall('020-26940500')}>
+                                onPress={() => dialCall(config.contact)}>
                                 <Text 
                                     style={styles.value, {textDecorationLine: 'underline'}}>
-                                    020-26940500
+                                    {config.contact}
                                 </Text>
                             </TouchableOpacity>
                         </Col>
@@ -68,13 +66,12 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'flex-start',
         alignItems: 'center',
-        //marginTop: 150
     },
     name:{
         fontSize:22,
         fontWeight: 'bold',
         padding: 15,
-        color: '#2C96EA'
+        color: config.primaryColor
     },
     grid:{
         marginTop: 5,

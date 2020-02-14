@@ -6,6 +6,7 @@ import { Actions }  from 'react-native-router-flux'
 import AsyncStorage from '@react-native-community/async-storage'
 import CustomHeader from '../../components/common/CustomHeader'
 import CustomButton from '../../components/common/CustomButton'
+import config from '../../utils/config'
 
 export default function Setting() {
     const [notificationSound, setNotificationSound] = useState(null)
@@ -118,7 +119,7 @@ export default function Setting() {
                                     <Radio 
                                         selected={activeTone === tone}
                                         color="#707070"
-                                        selectedColor="#2C96EA"
+                                        selectedColor={config.primaryColor}
                                     />
                                 </View> 
                             </TouchableOpacity>   
@@ -136,7 +137,7 @@ export default function Setting() {
                         onPressFunction={handleNotificationToneModalCancel}
                         style={{
                             width: '40%',
-                            borderColor: '#2C96EA',
+                            borderColor: config.primaryColor,
                             borderWidth: 2,
                             borderRadius: 5,
                             backgroundColor: 'white'
@@ -226,7 +227,7 @@ const styles = StyleSheet.create({
     },
     header: {
         fontSize: 18, 
-        color: '#2C96EA', 
+        color: config.primaryColor, 
         padding: 10
     },
     title: {

@@ -4,7 +4,9 @@ import app_config from './config'
 import NetworkRequest from './NetworkRequest'
 
 export function formatDateTime(dateTime = '2020-02-22 15:10:00'){
-    // 2020-02-22 15:10:00
+    /* Input Date Format: = '2020-02-22 15:10:00' */
+    /* Return Date Format: '22 Feb 2020, 3:10 PM' */
+
     let [fullDate, time] = dateTime.split(' ')
     let [year, month, date ] = fullDate.split('-')
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -21,7 +23,37 @@ export function formatDateTime(dateTime = '2020-02-22 15:10:00'){
     return `${date} ${month} ${year}, ${hr}:${min} ${AM_PM}`
 }
 
+export function formatDate(date = '2020-02-22'){
+    /* Input Date Format: = 2020-02-22 */
+    /* Return Date Format: February 22, 2020 */
+
+    let [year, month, day] = date.split('-')
+    const months = [
+        'January', 'February', 'March', 'April', 'May',
+        'June', 'July', 'August', 'September', 'October', 
+        'November', 'December'
+    ]
+    month = months[ month >= 10 ? month - 1: month%10 - 1 ]
+    return month + ' ' + day + ', ' + year
+}
+
+export function getCurrentDate(){
+    /* Return Date Format: 2020-02-24 */
+
+    const date = new Date()
+
+    let day = date.getDate()
+    day = day >= 10 ? day : '0' + day 
+
+    let month = date.getMonth() + 1
+    month = month >= 10 ? month : '0' + month
+
+    return date.getFullYear() + '-' + month + '-' + day
+}
+
 export function getTime(){
+    /* Return DateTime Format: '2020-02-24 15:34:20'*/
+    
     const date = new Date()
 
     let day = date.getDate()
@@ -31,6 +63,52 @@ export function getTime(){
     month = month >= 10 ? month : '0' + month
 
     return date.getFullYear() + '-' + month + '-' + day + ' ' + date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds()
+}
+
+export async function getData(){
+    /* Returns an Object like: { students: [], events: [] } */
+    const cachedData = await AsyncStorage.getItem('cachedData')
+    if(cachedData)
+        return JSON.parse(cachedData)
+    return { students: [], events: [] }
+}
+
+export async function getEvent(eventId){
+    const cachedData = await AsyncStorage.getItem('cachedData')
+    const data = JSON.parse(cachedData)
+    return data.events.find(event => event.id === eventId)
+}
+
+export async function addEvent(event){
+    const eventDataToSave = {
+        ...event
+    }
+    const cachedData = await AsyncStorage.getItem('cachedData')
+    const data = JSON.parse(cachedData)
+    const students = [...data.students]
+    const events = [eventDataToSave, ...data.events]
+    const dataToSave = {
+        students: students,
+        events: events
+    }
+    await AsyncStorage.setItem('cachedData', JSON.stringify(dataToSave))
+}
+
+export async function updateEventAttatchment(eventId, attatchment){
+    const cachedData = await AsyncStorage.getItem('cachedData')
+    const data = JSON.parse(cachedData)
+    const students = [...data.students]
+    const events = [...data.events]
+    events.map(event => {
+        if(event.id === eventId){
+            event.attatchment = attatchment
+        }
+    })
+    const dataToSave = {
+        students: students,
+        events: events
+    }
+    await AsyncStorage.setItem('cachedData', JSON.stringify(dataToSave))
 }
 
 export async function cachePayloadData(){
@@ -73,8 +151,11 @@ export async function cachePayloadData(){
       console.log("Invalid Device ID ")
 }
 
-export async function cacheFile(uri, type){
+export async function cacheFile(uri, type = 'png'){
     // download file/image/.. and save it to phone storage
+    if(uri === '' || uri === null){
+        return ''
+    }
     let extention = 'png'
     switch(type){
         case 'image': 
@@ -82,6 +163,9 @@ export async function cacheFile(uri, type){
             break;
         case 'pdf': 
             extention = 'pdf'
+            break;
+        default: 
+            extention = 'png'  
     }
     try {
         const options = {

@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react'
-import {StyleSheet, View, ScrollView, SafeAreaView, Platform} from 'react-native'
+import {StyleSheet, View, Platform} from 'react-native'
 import { Text, Container, Content, Left, List, ListItem, Thumbnail} from 'native-base'
 import { Actions } from 'react-native-router-flux';
 import AsyncStorage from '@react-native-community/async-storage';
 
 import {CalendarIcon, CallIcon, ContactsIcon, SettingsIcon} from '../components/common/Icons'
+import config from '../utils/config';
+
+const schoolLogo = '../assets/schoolLogo.png'
 
 export default function SideBar() {
     const [students, setStudents] = useState([])
@@ -17,6 +20,7 @@ export default function SideBar() {
         }
         getCachedData()
     }, [])
+    console.log('Sidebar Screen Re-rendered ...')
     return (
         <Container style={[styles.container]}>
            <View style={[{alignItems:'center'}, 
@@ -24,28 +28,34 @@ export default function SideBar() {
                 <Thumbnail 
                     large
                     style={styles.schoolLogo} 
-                    source={require('./assets/schoolLogo.png')} />
+                    source={require(schoolLogo)} />
            </View>
-           {/* <ScrollView> */}
                 <Content>
                     <List>
                         <ListItem header style={styles.listHeader}> 
                             <Text style={styles.listHeaderText}>Children</Text>
                         </ListItem>
                         {
-                            students.map(student => (
-                                <ListItem 
+                            students.map(student => {
+                                const defaultImage = student.gender === 'male' ?
+                                "https://pickaface.net/gallery/avatar/unr_workplacemale_180407_1548_cm3i.png" :
+                                'https://cdn4.vectorstock.com/i/1000x1000/50/68/avatar-icon-of-girl-in-a-baseball-cap-vector-16225068.jpg';
+                                return <ListItem 
                                     avatar 
                                     key={student.name}
                                     onPress={()=>Actions.profileScreen({student})}>  
                                     <Left style={styles.left}>
-                                        <Thumbnail style={styles.thumbnail} source={{uri: 'https://storage.jewnetwork.com/content/users/avatars/3675/avatar_3675_500.jpg'}} />
+                                        <Thumbnail 
+                                            style={styles.thumbnail} 
+                                            source={{uri: student.profile ? student.profile : defaultImage}} />
                                     </Left>
                                     <Text style={styles.listItemTitle}>
                                         {student.name}
                                     </Text>
                                 </ListItem>
-                            ))
+                            }
+                                
+                            )
                         }
                         <ListItem header style={styles.listHeader}> 
                             <Text style={styles.listHeaderText}>General</Text>
@@ -84,16 +94,13 @@ export default function SideBar() {
                         </ListItem>
                     </List>
                 </Content>
-           {/* </ScrollView> */}
         </Container>
     )
 }
 
 const styles = StyleSheet.create({
     container: {
-    //   flex: 1,
-    //   justifyContent: 'flex-start',
-      backgroundColor: '#2C96EA',
+      backgroundColor: config.primaryColor,
       fontFamily: `'Roboto', sans-serif`
     },
     title:{

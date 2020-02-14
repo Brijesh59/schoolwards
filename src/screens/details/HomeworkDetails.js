@@ -1,23 +1,51 @@
-import React,{ useState } from 'react'
+import React,{ useState, useEffect } from 'react'
 import { View, StyleSheet } from 'react-native'
 import { Card, CardItem, Left, Text, Icon, Right, Body, Button } from 'native-base'
-import AsyncStorage from '@react-native-community/async-storage'
 import FileViewer from 'react-native-file-viewer'
 
 import {AnnouncementIcon, CalendarIcon, HomeworkIcon, MessageIcon, NewsIcon, TimetableIcon, ContactIcon, ContactsIcon, TagIcon} from '../../components/common/Icons'
-import { cacheFile, formatDateTime } from '../../utils/functions'
-
+import { cacheFile, formatDateTime, getEvent, updateEventAttatchment } from '../../utils/functions'
+import config from '../../utils/config'
 import ActivityLoader from '../../components/common/ActivityLoader'
-import { Actions } from 'react-native-router-flux'
+
 
 export default function HomeworkDetails(props) {
-    const details = props.details
+    
     const updateHomeState = props.updateHomeState
-    console.log("Details: ", details)
-    console.log("updateHomeState: ", updateHomeState)
+    const [details, setDetails] = useState({})
     const [isAttatchDownloadSuccess, setIsAttatchDownloadSuccess] = useState(false)
     const [downloading, setDownloading] = useState(false)
+    
+    async function fetchData(){
+        const details = await getEvent(props.details.id)
+        setDetails(details)
+    }
+    useEffect(()=>{
+        fetchData()
+    }, [])
    
+    const handleAttatchmentOpen = () => {
+        FileViewer.open(details.attatchment)
+            .then(res => {})
+            .catch(error => {})
+    } 
+    
+    const handleAttatchmentDownload = async() => {
+        setDownloading(true)
+        const data = await cacheFile(details.attatchment, details.attatchmentExtention).then(d => d)
+        if(data.isFileSaved){
+            await updateEventAttatchment(details.id, data.filePath) 
+            setIsAttatchDownloadSuccess(true)  
+            await updateHomeState()
+            await fetchData()
+            setDownloading(false) 
+        }
+        else{
+            setIsAttatchDownloadSuccess(false)
+            setDownloading(false)
+        }
+    }
+
     const openAttatchment = 
          <Button 
             rounded
@@ -28,13 +56,6 @@ export default function HomeworkDetails(props) {
             <Text style={{color: '#363636'}}>Open</Text>
         </Button>
 
-    const handleAttatchmentOpen = () => {
-        console.log('Open')
-        FileViewer.open(details.attatchment)
-            .then(res => {})
-            .catch(error => {})
-    }
-    
     const downloadAttatchment = 
         <Button 
             rounded
@@ -49,39 +70,8 @@ export default function HomeworkDetails(props) {
                 <Text style={{color: '#363636'}}>Download</Text>
             } 
         </Button>
-
-
-    const handleAttatchmentDownload = async() => {
-        setDownloading(true)
-        const data = await cacheFile(details.attatchment, details.attatchmentExtention).then(d => d)
-        if(data.isFileSaved){
-            await updateAttatchmentPathLocally(data.filePath) 
-            setIsAttatchDownloadSuccess(true)  
-            setDownloading(false) 
-            updateHomeState()
-        }
-        else{
-            setIsAttatchDownloadSuccess(false)
-            setDownloading(false)
-        }
-    }
-
-    const updateAttatchmentPathLocally = async (filePath) => {
-        const cachedData = await AsyncStorage.getItem('cachedData')
-        const JSONData = JSON.parse(cachedData)
-        const events = JSONData.events
-        events.forEach(event => {
-            if(event.title === details.title && event.description === details.description){
-                event.attatchment = filePath
-            }
-        })
-        const dataToSave = {
-            students: [...JSONData.students],
-            events: events
-        }
-        await AsyncStorage.setItem('cachedData', JSON.stringify(dataToSave))
-    }
-
+    
+    console.log('Homework Screen Re-rendered ...', details)
     return (
         <View>
             <Card style={styles.container} >
@@ -156,13 +146,13 @@ const styles = StyleSheet.create({
         color: '#707070', 
     },
     normal: {
-        color: '#2C96EA', 
+        color: config.primaryColor, 
         fontWeight: '400',
         fontSize: 14,
         width: '100%'
     },
     iconStyle:{
-        color: '#2C96EA',
+        color: config.primaryColor,
         fontSize: 22
     }
 });

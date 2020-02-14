@@ -6,6 +6,7 @@ import ActivityLoader from '../../components/common/ActivityLoader'
 import axios from 'axios'
 import APIs from '../../utils/api'
 import { ScrollView } from 'react-native-gesture-handler'
+import config from '../../utils/config'
 
 
 function FeeDetails(props) {
@@ -97,7 +98,7 @@ function FeeDetails(props) {
                         <Text style={styles.text}></Text>
                     </Left>
                     <Right>
-                        <Text style={[styles.text, {color: '#2C96EA'}]}>
+                        <Text style={[styles.text, {color: config.primaryColor}]}>
                             Total : Rs. { items[key][0].total }
                         </Text>
                     </Right>
@@ -143,8 +144,6 @@ function FeeDetails(props) {
 
 const styles = StyleSheet.create({
     container: {
-        // flex: 1,
-        // justifyContent: 'flex-start',
         alignItems: 'center',
     },
     card:{
@@ -155,7 +154,6 @@ const styles = StyleSheet.create({
     },
     header:{
         fontSize: 18,
-       // paddingLeft: 10,
         fontWeight: "600",
         color: "#363636"
     },
@@ -167,7 +165,6 @@ const styles = StyleSheet.create({
     },
     text:{
         fontSize: 14,
-        // marginLeft: 10,
         fontWeight: "400",
         color: "#707070"
     },
@@ -180,39 +177,5 @@ const styles = StyleSheet.create({
     
 });
 
-// const mapStateToProps = state => {
-//    // console.log("GlobaleState: ", state)
-//     return {
-//         students: state.studentReducer.students
-//     }
-// }
-
-// const mapDispatchToProps = dispatch =>{
-//     return {
-//         pushStudent: dispatch(pushStudent())
-//     }
-// }   
-
 export default FeeDetails
 
-
-
-
-/*
-rn-fetch-blob
-
-let dirs = RNFetchBlob.fs.dirs
-RNFetchBlob
-.config({
-  // response data will be saved to this path if it has access right.
-  path : dirs.DocumentDir + '/path-to-file.anything'
-})
-.fetch('GET', 'http://www.example.com/file/example.zip', {
-  //some headers ..
-})
-.then((res) => {
-  // the path should be dirs.DocumentDir + 'path-to-file.anything'
-  console.log('The file saved to ', res.path())
-})
-
-*/

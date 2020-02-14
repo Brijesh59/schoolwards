@@ -1,7 +1,8 @@
 import React from 'react'
 import { View, StyleSheet } from 'react-native'
 import { Card, CardItem, Left, Text, Icon, Right, Body } from 'native-base'
-import { cacheFile, formatDateTime } from '../../utils/functions'
+import { formatDateTime } from '../../utils/functions'
+import config from '../../utils/config'
 export default function TimetableDetails({details}) {
     console.log(details)
     return (
@@ -67,13 +68,13 @@ const styles = StyleSheet.create({
         color: '#707070', 
     },
     normal: {
-        color: '#2C96EA', 
+        color: config.primaryColor, 
         fontWeight: '400',
         fontSize: 14,
         width: '100%'
     },
     iconStyle:{
-        color: '#2C96EA',
+        color: config.primaryColor,
         fontSize: 22
     }
 });

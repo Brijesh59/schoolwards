@@ -3,11 +3,10 @@ import { View, Text, StyleSheet } from 'react-native'
 import { Actions }  from 'react-native-router-flux';
 import AsyncStorage from '@react-native-community/async-storage';
 import DeviceInfo   from 'react-native-device-info';
-import axios        from 'axios'
 
 import ActivityLoader from '../components/common/ActivityLoader'
-import APIs           from '../utils/api'
 import app_config     from '../utils/config'
+import {cacheFile}     from '../utils/functions'
 import CustomButton   from '../components/common/CustomButton'
 import Input          from '../components/common/Input'
 import NetworkRequest from '../utils/NetworkRequest';
@@ -120,7 +119,8 @@ const VerifyOTP = (props) => {
         }
 
         // Saving Students details
-        students.forEach(student => {
+        for(const student of students){
+            const profileUrl = await cacheFile(student.photo)
             dataToSave.students.push({
                 studentId: student.id,
                 prnNo: student.prn_no,
@@ -131,7 +131,7 @@ const VerifyOTP = (props) => {
                 address: `${student.address}, ${student.city}, ${student.pincode}`,
                 city: student.city,
                 pincode: student.pincode,
-                profileImage: student.photo,
+                profileImage: profileUrl,
                 fatherName: student.father_name,
                 motherName: student.mother_name,
                 fatherEmail: student.father_email,
@@ -143,7 +143,7 @@ const VerifyOTP = (props) => {
                 division: student.division,
                 rollNo: student.roll_no
             })
-        })
+        }
 
         // Saving Individual Student events
         students.forEach(student => {
@@ -189,9 +189,7 @@ const VerifyOTP = (props) => {
             })
         })
 
-        console.log("Events in Verify OTP: ", JSON.stringify(dataToSave))
         await AsyncStorage.setItem('cachedData', JSON.stringify(dataToSave))
-
     }
 
     const setFocus = (focusEle) => {
@@ -287,7 +285,6 @@ const styles = StyleSheet.create({
       flex: 1,
       justifyContent: 'flex-start',
       alignItems: 'center',
-    //   backgroundColor: '#F5FCFF',
       marginTop: 120 
     },
     welcome: {

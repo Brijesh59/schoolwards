@@ -1,5 +1,6 @@
 import React from 'react'
 import {View, TouchableOpacity, Text, StyleSheet} from 'react-native'
+import config from '../../utils/config'
 
 export default function Button({title, onPressFunction, style, disabled}) {
     
@@ -20,16 +21,14 @@ export default function Button({title, onPressFunction, style, disabled}) {
 const styles = StyleSheet.create({
     btn:{
         padding: 10,
-        //width: 230,
         textAlign: 'center',
-        alignItems: 'center',
-        
+        alignItems: 'center', 
         borderRadius: 5
     },
     backgroundColor: {
-        backgroundColor: '#F8C732',
+        backgroundColor: config.secondaryColor,
         borderWidth: 2,
-        borderColor: '#F8C732'
+        borderColor: config.secondaryColor
     }
 });
 

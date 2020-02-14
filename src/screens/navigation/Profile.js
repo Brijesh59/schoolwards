@@ -4,9 +4,12 @@ import { Text, Container, Content, Thumbnail, Grid, Col, Row} from 'native-base'
 import CustomButton from '../../components/common/CustomButton'
 import CustomHeader from '../../components/common/CustomHeader';
 import { Actions } from 'react-native-router-flux';
+import config from '../../utils/config';
 
 export default function Profile({student}) {
-    console.log("Profile: ", student)
+    const defaultImage = student.gender === 'male' ?
+        "https://pickaface.net/gallery/avatar/unr_workplacemale_180407_1548_cm3i.png" :
+        'https://cdn4.vectorstock.com/i/1000x1000/50/68/avatar-icon-of-girl-in-a-baseball-cap-vector-16225068.jpg'
     return (
         <Container> 
             <CustomHeader 
@@ -15,7 +18,8 @@ export default function Profile({student}) {
                 contentContainerStyle={styles.container}>
                 <Thumbnail 
                     large
-                    style={styles.thumbnail} source={{uri: 'https://raw.githubusercontent.com/Ashwinvalento/cartoon-avatar/master/lib/images/female/68.png'}} />
+                    style={styles.thumbnail} 
+                    source={{uri: student.profile ? student.profile : defaultImage}} />
                 <Text style={styles.name}>{student.name}</Text>    
                 <Grid style={styles.grid}>
                     <Row style={styles.row}>
@@ -179,7 +183,7 @@ const styles = StyleSheet.create({
     name:{
         fontSize:20,
         padding: 10,
-        color: '#2C96EA'
+        color: config.primaryColor
     },
     grid:{
         marginTop: 5,

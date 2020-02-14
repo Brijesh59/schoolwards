@@ -1,9 +1,76 @@
-import React from 'react'
+import React,{ useState, useEffect } from 'react'
 import { View, StyleSheet } from 'react-native'
-import { Card, CardItem, Left, Text, Icon, Right, Body, Grid, Row, Col } from 'native-base'
-import { cacheFile, formatDateTime } from '../../utils/functions'
-export default function EventDetails({details}) {
-    console.log(details)
+import { Card, CardItem, Left, Text, Icon, Right, Body, Button } from 'native-base'
+import FileViewer from 'react-native-file-viewer'
+
+import {AnnouncementIcon, CalendarIcon, HomeworkIcon, MessageIcon, NewsIcon, TimetableIcon, ContactIcon, ContactsIcon, TagIcon} from '../../components/common/Icons'
+import { cacheFile, formatDateTime, getEvent, updateEventAttatchment } from '../../utils/functions'
+import config from '../../utils/config'
+import ActivityLoader from '../../components/common/ActivityLoader'
+
+export default function EventDetails(props) {
+    
+    const updateHomeState = props.updateHomeState
+    const [details, setDetails] = useState({})
+    const [isAttatchDownloadSuccess, setIsAttatchDownloadSuccess] = useState(false)
+    const [downloading, setDownloading] = useState(false)
+    
+    async function fetchData(){
+        const details = await getEvent(props.details.id)
+        setDetails(details)
+    }
+    useEffect(()=>{
+        fetchData()
+    }, [])
+   
+    const handleAttatchmentOpen = () => {
+        FileViewer.open(details.attatchment)
+            .then(res => {})
+            .catch(error => {})
+    } 
+    
+    const handleAttatchmentDownload = async() => {
+        setDownloading(true)
+        const data = await cacheFile(details.attatchment, details.attatchmentExtention).then(d => d)
+        if(data.isFileSaved){
+            await updateEventAttatchment(details.id, data.filePath) 
+            setIsAttatchDownloadSuccess(true)  
+            await updateHomeState()
+            await fetchData()
+            setDownloading(false) 
+        }
+        else{
+            setIsAttatchDownloadSuccess(false)
+            setDownloading(false)
+        }
+    }
+
+    const openAttatchment = 
+         <Button 
+            rounded
+            style={{backgroundColor: '#F7F8F7', color: 'black',elevation:0,shadowOpacity:0,shadowColor:'transparent'}}
+            iconLeft 
+            onPress={()=>handleAttatchmentOpen()}>
+            <Icon name="attach" style={{color: '#363636', transform: [{rotateZ: '30deg'}]}}/>
+            <Text style={{color: '#363636'}}>Open</Text>
+        </Button>
+
+    const downloadAttatchment = 
+        <Button 
+            rounded
+            disabled={downloading}
+            style={{backgroundColor: '#F7F8F7', color: 'black',elevation:0,shadowOpacity:0,shadowColor:'transparent'}}
+            iconLeft 
+            onPress={() => handleAttatchmentDownload()}>
+            <Icon name="attach" style={{color: '#363636', transform: [{rotateZ: '30deg'}]}}/>
+            {
+                downloading ? 
+                <ActivityLoader /> :
+                <Text style={{color: '#363636'}}>Download</Text>
+            } 
+        </Button>
+    
+    console.log('Homework Screen Re-rendered ...', details)
     return (
         <View>
             <Card style={styles.container} >
@@ -14,68 +81,26 @@ export default function EventDetails({details}) {
                         </Text>
                     </Left>
                     <Right>
-                        <Icon name="mail" style={styles.iconStyle} />
+                        <Icon name="journal" style={styles.iconStyle} />
                     </Right>
                 </CardItem>
                 <CardItem >
-                    <Grid style={styles.grid}>
-                        <Row style={{height:'auto'}}>
-                            <Col style={{width:'40%'}}>
-                                <Text style={styles.secondary}>
-                                    Name of Event
-                                </Text>
-                            </Col>
-                            <Col> 
-                                <Text style={styles.secondary}>
-                                    {details.title}
-                                </Text>
-                            </Col>
-                        </Row>
-                        <Row style={{height:'auto'}}>
-                            <Col style={{width:'40%'}}>
-                                <Text style={styles.secondary}>
-                                    Venue
-                                </Text>
-                            </Col>
-                            <Col> 
-                                <Text style={styles.secondary}>
-                                    {details.venue}
-                                </Text>
-                            </Col>
-                        </Row>
-                        <Row style={{height:'auto'}}>
-                            <Col style={{width:'40%'}}>
-                                <Text style={styles.secondary}>
-                                    Start Date
-                                </Text>
-                            </Col>
-                            <Col> 
-                                <Text style={styles.secondary}>
-                                    {details.startDate}
-                                </Text>
-                            </Col>
-                        </Row>
-                        <Row style={{height:'auto'}}>
-                            <Col style={{width:'40%'}}>
-                                <Text style={styles.secondary}>
-                                    End Date
-                                </Text>
-                            </Col>
-                            <Col> 
-                                <Text style={styles.secondary}>
-                                    {details.endDate}
-                                </Text>
-                            </Col>
-                        </Row>
-                        <Row style={{height:'auto'}}>
-                            <Body> 
-                            <Text style={styles.description}>  
-                                {details.description}
-                            </Text>
-                            </Body>
-                        </Row>
-                    </Grid>
-                   
+                    <Body>
+                        <Text style={styles.description}>
+                            {details.description}
+                        </Text>
+                    </Body>
+                </CardItem>
+                <CardItem>
+                    <Left>
+                        { 
+                            details.attatchment != null && (
+                                details.attatchment.includes('http') ? 
+                                downloadAttatchment :
+                                openAttatchment 
+                            )
+                        }
+                    </Left>
                 </CardItem>
                 <CardItem>
                     <Left>
@@ -118,28 +143,15 @@ const styles = StyleSheet.create({
     },
     description:{
         color: '#707070', 
-        marginTop: 10
     },
     normal: {
-        color: '#2C96EA', 
+        color: config.primaryColor, 
         fontWeight: '400',
         fontSize: 14,
         width: '100%'
     },
-    secondary:{
-        fontSize: 14,
-        marginBottom: 5,
-        marginTop: 5,
-        color: '#363636',
-    },
     iconStyle:{
-        color: '#2C96EA',
+        color: config.primaryColor,
         fontSize: 22
-    },
-    grid:{
-        //marginTop: 5,
-    },
-    row:{
-        marginTop: 10
-    },
+    }
 });

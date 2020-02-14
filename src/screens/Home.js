@@ -12,7 +12,9 @@ import {cachePayloadData} from '../utils/functions'
 import CustomCard   from '../components/common/CustomCard'
 import SideBar      from './SideBar'
 import CustomButton from '../components/common/CustomButton'
+import ActivityLoader from '../components/common/ActivityLoader'
 import {FilterIcon, SortIcon, LogoutIcon, MenuIcon} from '../components/common/Icons'
+import config from '../utils/config'
 
 export default class Home extends React.Component{
 
@@ -309,7 +311,7 @@ export default class Home extends React.Component{
     }
 
     render(){
-        console.log("Home Rerender")
+        console.log("Home Screen Rerender ...")
         const filteredEvents = 
             this.state.events
                 .filter(event =>        
@@ -326,7 +328,7 @@ export default class Home extends React.Component{
         const header = 
             <Header 
                 style={styles.header}           
-                androidStatusBarColor="#3295E9" 
+                androidStatusBarColor={config.primaryColor}
                 iosBarStyle="light-content">
                 <Left style={{maxWidth:60, marginLeft: 8}}>
                     <Button transparent onPress={this.openDrawer}>
@@ -403,7 +405,7 @@ export default class Home extends React.Component{
                                 alignItems: 'center'
                             }}>
                                 <SortIcon style={{marginRight:5}}/>
-                                <Text style={{fontSize: 22, color: '#2C96EA' }}>Sort</Text>
+                                <Text style={{fontSize: 22, color: config.primaryColor }}>Sort</Text>
                             </View>
                         
                             <View style={{width: '90%'}}>
@@ -415,7 +417,7 @@ export default class Home extends React.Component{
                                         <Radio 
                                             onPress={this.sortListNewToOld}
                                             selected={this.state.sortNewtoOld}
-                                            selectedColor="#2C96EA"
+                                            selectedColor={config.primaryColor}
                                         />
                                     </Left>
                                 </ListItem>  
@@ -427,7 +429,7 @@ export default class Home extends React.Component{
                                             <Radio 
                                                 onPress={this.sortListOldToNew}
                                                 selected={this.state.sortOldToNew}
-                                                selectedColor="#2C96EA"
+                                                selectedColor={config.primaryColor}
                                             />
                                         </Left>
                                 </ListItem> 
@@ -460,12 +462,12 @@ export default class Home extends React.Component{
                             justifyContent: 'space-between',
                             padding: 15
                         }}>
-                            <Text style={{fontSize: 18, color: '#2C96EA' }}>Filter</Text> 
+                            <Text style={{fontSize: 18, color: config.primaryColor }}>Filter</Text> 
                             <TouchableOpacity onPress={this.handleClearAll}>
-                                <Text style={{fontSize: 18, color: '#2C96EA' }}>Clear all</Text>
+                                <Text style={{fontSize: 18, color: config.primaryColor }}>Clear all</Text>
                             </TouchableOpacity>
                         </View>
-                        <Text style={{fontSize: 18, color: '#2C96EA', paddingLeft:15, marginBottom: 10 }}>
+                        <Text style={{fontSize: 18, color: config.primaryColor, paddingLeft:15, marginBottom: 10 }}>
                             Children
                         </Text> 
 
@@ -492,7 +494,7 @@ export default class Home extends React.Component{
                         </View>
  
                         <Text 
-                            style={{fontSize: 18, color: '#2C96EA', paddingLeft:15, marginBottom: 10, marginTop:5 }}>
+                            style={{fontSize: 18, color: config.primaryColor, paddingLeft:15, marginBottom: 10, marginTop:5 }}>
                             Type
                         </Text> 
                         <View >
@@ -524,7 +526,7 @@ export default class Home extends React.Component{
                                 onPressFunction={this.handleFilterCancel}
                                 style={{
                                     width: '40%',
-                                    borderColor: '#2C96EA',
+                                    borderColor: config.primaryColor,
                                     borderWidth: 2,
                                     borderRadius: 5,
                                     backgroundColor: 'white'
@@ -551,7 +553,10 @@ export default class Home extends React.Component{
                     <Container> 
                         {header}
                         <View style={styles.content}>
-                            { mainContent }
+                            { this.state.events.length > 0 ?
+                                mainContent :
+                                <ActivityLoader />
+                            }
                             { sortModal }
                             { filterModal }    
                         </View>
@@ -569,7 +574,7 @@ const styles = StyleSheet.create({
       alignItems: 'center',
     },
     header: { 
-        backgroundColor: '#2C96EA',
+        backgroundColor: config.primaryColor,
     },
     headerTitle:{
         color: 'white',

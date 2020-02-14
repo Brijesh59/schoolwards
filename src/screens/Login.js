@@ -1,9 +1,9 @@
-import React, { Component } from 'react';
-import { View, Text, TextInput, BackHandler, StyleSheet } from 'react-native';
+import React, { Component } from 'react'
+import { View, Text, TextInput, StyleSheet } from 'react-native'
 import ActivityLoader from '../components/common/ActivityLoader'
 import APIs from '../utils/api'
-import { Actions } from 'react-native-router-flux';
-import CustomButton from '../components/common/CustomButton';
+import { Actions } from 'react-native-router-flux'
+import CustomButton from '../components/common/CustomButton'
 import app_config from '../utils/config'
 
 class Login extends Component {
@@ -19,8 +19,8 @@ class Login extends Component {
 
   onChangeText = (text) => {
       this.setState({
-        value: text
-        ,data: ''
+        value: text,
+        data: ''
       })  
   }
 
@@ -49,6 +49,7 @@ class Login extends Component {
   }
 
   render() {
+    console.log('Login Screen Re-rendered ...')
     return (
       <View style={styles.container}>
         <Text style={styles.title}>
@@ -78,9 +79,8 @@ class Login extends Component {
             {this.state.data.response}
           </Text> 
         }   
-        
       </View>
-    );
+    )
   }
 }
 
@@ -89,7 +89,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-start',
     alignItems: 'center',
-   // backgroundColor: '#F5FCFF',
     marginTop: 150
   },
   title: {
@@ -113,6 +112,6 @@ const styles = StyleSheet.create({
     borderColor: '#f44336',
     borderWidth: 1
   }
-});
+})
 
-export default Login;
+export default Login

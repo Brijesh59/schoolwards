@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-community/async-storage'
 import FileViewer from 'react-native-file-viewer';
 import ActivityLoader from './ActivityLoader'
 import {formatDateTime} from '../../utils/functions'
+import config from '../../utils/config'
 
 export default function CustomCard({title, type, description, to, studentName, dateTime, createdOn,onCardPressed, attatchment, attatchmentExtention, updateHomeState}) {
 
@@ -156,20 +157,20 @@ export default function CustomCard({title, type, description, to, studentName, d
 const styles = StyleSheet.create({
     container: {
       flex: 1,  
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    title: { 
-        color: '#363636',
-        fontWeight: '600'
-    },
-    description:{
-        color: '#707070', 
-    },
-    normal: {
-        color: '#2C96EA', 
-        fontWeight: '400',
-        fontSize: 14,
-        width: '100%'
-    },
+        justifyContent: 'center',
+        alignItems: 'center',
+        },
+        title: { 
+            color: '#363636',
+            fontWeight: '600'
+        },
+        description:{
+            color: '#707070', 
+        },
+        normal: {
+            color: config.primaryColor, 
+            fontWeight: '400',
+            fontSize: 14,
+            width: '100%'
+        },
 });

@@ -4,6 +4,7 @@ import {StatusBar} from 'react-native'
 import AsyncStorage from '@react-native-community/async-storage'
 import Router from './Router'
 import FirebaseConfig from '../utils/Firebase'
+import config from '../utils/config'
 
 export default class App extends Component{
 
@@ -27,7 +28,7 @@ export default class App extends Component{
     return (
       <> 
         <StatusBar 
-          backgroundColor="#3295E9" 
+          backgroundColor={config.primaryColor} 
           barStyle="light-content" />
         <Router />  
       </>

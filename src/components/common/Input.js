@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { View, TextInput, StyleSheet } from 'react-native'
+import config from '../../utils/config'
 
 export default function Input(props) {
     const [focusStyle, setFocusStyle] = useState(0);
@@ -13,7 +14,7 @@ export default function Input(props) {
                 maxLength={1}
                 style={styles.inputStyle}
                 onFocus={() => setFocusStyle(1)}
-                onBlur={() => setFocusStyle(0)}
+                onBlur={()  => setFocusStyle(0)}
             />
         </View>
     )
@@ -43,7 +44,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: "center",
         margin: 3,
-        borderBottomColor: '#F8C732',
+        borderBottomColor: config.secondaryColor,
         borderBottomWidth: 3,
     }
 })

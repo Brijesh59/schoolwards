@@ -4,6 +4,7 @@ import FeatherIcon    from 'react-native-vector-icons/Feather'
 import MaterialIcon   from 'react-native-vector-icons/MaterialCommunityIcons'
 import AntDesign   from 'react-native-vector-icons/AntDesign'
 import { Icon }       from 'native-base'
+import config from '../../utils/config'
 
 const CalendarIcon     = ({style}) => <Icon name='calendar' style={[styles.iconStyle, style]} />
 const CallIcon         = ({style}) => <Icon name='call' style={[styles.iconStyle, style]} />
@@ -24,7 +25,7 @@ const LogoutIcon       = ({style}) => <AntDesign    name='logout' style={[styles
 
 const styles = StyleSheet.create({
     iconStyle:{
-        color: '#2C96EA',
+        color: config.primaryColor,
         fontSize: 22
     }
 });

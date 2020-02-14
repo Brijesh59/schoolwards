@@ -2,6 +2,7 @@ import React from 'react'
 import {StyleSheet} from 'react-native'
 import { Left, Icon, Title, Header, Button, Body } from 'native-base'
 import { Actions } from 'react-native-router-flux'
+import config from '../../utils/config'
 
 const CustomHeader = (props) => {
     const headerTitle = props.title
@@ -10,7 +11,8 @@ const CustomHeader = (props) => {
                         ()=>Actions.pop({refresh:{}})
     return (
         <Header 
-            style={styles.header}   androidStatusBarColor="#3295E9" 
+            style={styles.header}   
+            androidStatusBarColor={config.primaryColor}
             iosBarStyle="light-content">
             <Left style={{maxWidth:60, marginLeft: 8}}>
                 <Button 
@@ -30,7 +32,7 @@ const CustomHeader = (props) => {
 
 const styles = StyleSheet.create({
     header:{
-        backgroundColor: '#2C96EA'
+        backgroundColor: config.primaryColor
     },
     headerTitle:{
         color: 'white', 

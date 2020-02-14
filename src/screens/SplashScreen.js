@@ -3,6 +3,9 @@ import { View, StyleSheet, Image } from 'react-native'
 import { Actions } from 'react-native-router-flux'
 import AsyncStorage from '@react-native-community/async-storage'
 import * as Progress from 'react-native-progress'
+import config from '../utils/config'
+
+const schoolLogo = '../assets/schoolLogo.png'
 
 class SplashScreen extends Component {
     state = {
@@ -37,7 +40,7 @@ class SplashScreen extends Component {
     render() {
         return (
             <View style={styles.container}>
-               <Image source={require('./assets/schoolLogo.png')} style={{
+               <Image source={require(schoolLogo)} style={{
                     marginBottom: 20,
                     width: 200,
                     height: 200
@@ -46,7 +49,7 @@ class SplashScreen extends Component {
                     progress={this.state.progress} 
                     width={250} 
                     unfilledColor='#8DC6F3' 
-                    color='#F8C732' 
+                    color={config.secondaryColor}
                     borderWidth={0} />
             </View>
         )

@@ -4,12 +4,13 @@ import {
   StyleSheet,
   View,
 } from 'react-native'
+import config from '../../utils/config'
 
 export default class ActivityLoader extends Component {
   render() {
     return (
       <View style={[styles.container, styles.horizontal]}>
-        <ActivityIndicator size="large" color="#F8C732" />
+        <ActivityIndicator size="large" color={config.secondaryColor} />
       </View>
     )
   }
