@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import {StyleSheet, View, ScrollView, Dimensions} from 'react-native'
 import { Container, Content, Button, Body, Text, Card, CardItem} from 'native-base'
-import AsyncStorage from '@react-native-community/async-storage'
 import {Calendar} from 'react-native-calendars'
 import CustomHeader from '../../components/common/CustomHeader'
-import {formatDate, getCurrentDate} from '../../utils/functions'
+import {formatDate, getCurrentDate, getData} from '../../utils/functions'
 import config from '../../utils/config'
 
 export default function CalenderScreen() {
@@ -13,25 +12,38 @@ export default function CalenderScreen() {
     const [filteredEvents, setFilteredEvents] = useState([])
     const [selectedStudent, setSelectedStudent] = useState(0)
     const [selectedDate, setSelectedDate] = useState(getCurrentDate())
+    const [markedDates, setMarkedDates] = useState({})
     const screenWidth = Dimensions.get('window').width
     const optimumLayoutWidth = screenWidth - screenWidth/10
     
-    useEffect( () => {
+    useEffect(() => {
         async function fetchStudentsAndEvents(){
-            const cachedData = await AsyncStorage.getItem('cachedData')
-            const JSONDATA = JSON.parse(cachedData)
+            const JSONDATA = await getData()
             setStudents(JSONDATA.students)
             setEvents(JSONDATA.events)
         }
         fetchStudentsAndEvents() 
     }, [])
 
+    useEffect(() => {
+        handleMarkedDate()
+    }, [students, events])
+
+
+    useEffect(() => {
+        handleMarkedDate()
+    }, [selectedStudent])
+
+    useEffect(() => {
+        handleMarkedDate()
+    }, [selectedDate])
+
     function filterEventsForStudentChange(selectedStudent){
         const filteredEvents = events.filter(e => {
-            if(!e.studentName)
+            if(e.dateTime && e.dateTime.split(' ')[0] === selectedDate && !e.studentName)
                 return e
             else
-                return e.studentName.split(' ')[0] === selectedStudent 
+                return e.dateTime && e.dateTime.split(' ')[0] === selectedDate && e.studentName.split(' ')[0] === selectedStudent 
         })
         setFilteredEvents(filteredEvents)
     }
@@ -51,17 +63,28 @@ export default function CalenderScreen() {
         filterEventsForDateChange(selectedDate)
     }
 
-    let markedDates = {}
-    markedDates[selectedDate] = { selected: true }
-    events.forEach(event => {
-        event.dateTime && (
-            markedDates[event.dateTime.split(' ')[0]] = {
-                marked: true,
-                selected: event.dateTime.split(' ')[0] === selectedDate
+    function handleMarkedDate(){
+        console.log("Set MarkedDate Called, ", events)
+        let tempMarkedDates = {}
+        tempMarkedDates[selectedDate] = { selected: true }
+        events.forEach(event => {
+            if( event.dateTime && !event.studentName){
+                tempMarkedDates[event.dateTime.split(' ')[0]] = {
+                    marked: true,
+                    selected: event.dateTime.split(' ')[0] === selectedDate
+                }
             }
-        )
-    })
-
+            else if(event.dateTime && event.studentName.split(' ')[0] === students[selectedStudent].firstName){
+                tempMarkedDates[event.dateTime.split(' ')[0]] = {
+                    marked: true,
+                    selected: event.dateTime.split(' ')[0] === selectedDate
+                }
+            }
+        })
+        console.log("Marked Dates, ", tempMarkedDates)
+        setMarkedDates(tempMarkedDates)
+    }
+    
     const studentsList = students.map((student, index) => 
         <Button 
             key = {student.firstName}

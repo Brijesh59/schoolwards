@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-community/async-storage';
 
 import {CalendarIcon, CallIcon, ContactsIcon, SettingsIcon} from '../components/common/Icons'
 import config from '../utils/config';
+import {getData} from '../utils/functions';
 
 const schoolLogo = '../assets/schoolLogo.png'
 
@@ -14,8 +15,7 @@ export default function SideBar() {
 
     useEffect(() => {
         const getCachedData = async()=>{
-            const cachedData = await AsyncStorage.getItem('cachedData')
-            const JSONData = JSON.parse(cachedData)
+            const JSONData = await getData()
             setStudents(JSONData.students)
         }
         getCachedData()

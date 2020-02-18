@@ -61,6 +61,7 @@ export default function ContactUs() {
         </Container>
     )
 }
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,

@@ -6,7 +6,7 @@ import DeviceInfo   from 'react-native-device-info';
 
 import ActivityLoader from '../components/common/ActivityLoader'
 import app_config     from '../utils/config'
-import {cacheFile}     from '../utils/functions'
+import {addStudentsAndEventsUponLogin}     from '../utils/functions'
 import CustomButton   from '../components/common/CustomButton'
 import Input          from '../components/common/Input'
 import NetworkRequest from '../utils/NetworkRequest';
@@ -88,8 +88,7 @@ const VerifyOTP = (props) => {
         setIsLoding(false)
         if(data.response === 'success'){
             console.log('Login Success.') 
-            console.log("Response:: ", JSON.stringify(data)) 
-            await setUserLoggedIn(data.students, data.common_events)
+            await setUserLoggedInAndCacheData(data.students, data.common_events)
             await AsyncStorage.setItem('mobile', mobileNo)
 
             // update device id on server
@@ -110,86 +109,9 @@ const VerifyOTP = (props) => {
         }
     } 
 
-    const setUserLoggedIn = async (students, commonEvents) => {
-        console.log('Common Events: ', commonEvents)
+    const setUserLoggedInAndCacheData = async (students, commonEvents) => {
         await AsyncStorage.setItem('isUserLoggedIn', 'true')
-        const dataToSave = {
-            students: [],
-            events: []
-        }
-
-        // Saving Students details
-        for(const student of students){
-            const profileUrl = await cacheFile(student.photo)
-            dataToSave.students.push({
-                studentId: student.id,
-                prnNo: student.prn_no,
-                firstName: student.first_name,
-                name: `${student.first_name} ${student.middle_name && student.middle_name} ${student.last_name && student.last_name}`,
-                dateOfBirth: student.dob,
-                gender: student.gender,
-                address: `${student.address}, ${student.city}, ${student.pincode}`,
-                city: student.city,
-                pincode: student.pincode,
-                profileImage: profileUrl,
-                fatherName: student.father_name,
-                motherName: student.mother_name,
-                fatherEmail: student.father_email,
-                motherEmail: student.mother_email,
-                fatherMobile: student.father_mobile,
-                motherMobile: student.mother_mobile,
-                preferenceContact: student.prefence_contact,
-                class: student.standard,
-                division: student.division,
-                rollNo: student.roll_no
-            })
-        }
-
-        // Saving Individual Student events
-        students.forEach(student => {
-            const studentId = student.id
-            const studentName = student.first_name
-            student.events.forEach(event => {
-                const NIA_NDA = event.non_interaction_attributes.non_display_attributes
-                const NIA_DA  = event.non_interaction_attributes.display_attributes
-                dataToSave.events.push({
-                    id: NIA_NDA.id,
-                    title: NIA_DA.name,
-                    description: NIA_DA.description,
-                    type: NIA_DA.series,
-                    to: 'individual',
-                    createdOn: NIA_DA.created_on,
-                    dateTime: NIA_DA.date_time,
-                    attatchment: NIA_DA.url != "" ? NIA_DA.url : null,
-                    attatchmentExtention: NIA_NDA.type,
-                    venue: NIA_DA.venue,
-                    studentName: studentName,
-                    studentId: studentId
-                })
-            })
-        })
-
-        // Saving Common events
-        commonEvents.forEach(event => {
-            const NIA_NDA = event.non_interaction_attributes.non_display_attributes
-            const NIA_DA  = event.non_interaction_attributes.display_attributes
-            dataToSave.events.push({
-                id: NIA_NDA.id,
-                title: NIA_DA.name,
-                description: NIA_DA.description,
-                type: NIA_DA.series,
-                to: 'all',
-                createdOn: NIA_DA.created_on,
-                dateTime: NIA_DA.date_time,
-                attatchment: NIA_DA.url != "" ? NIA_DA.url : null,
-                attatchmentExtention: NIA_NDA.type,
-                venue: NIA_DA.venue,
-                studentName: null,
-                studentId: null
-            })
-        })
-
-        await AsyncStorage.setItem('cachedData', JSON.stringify(dataToSave))
+        await addStudentsAndEventsUponLogin(students, commonEvents)
     }
 
     const setFocus = (focusEle) => {

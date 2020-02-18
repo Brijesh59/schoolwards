@@ -98,12 +98,9 @@ export default class FirebaseConfig{
 
   async sendLocalNotification(payload) {
     const [notification, vibration] = await AsyncStorage.multiGet(["notification", "vibration"])
-    // console.log("V: ", vibration[1]==='true' ? true : false)
-    // console.log("N: ", notification[1]==='true' ? true : false)
     if( Platform.OS === 'android') {
       PushNotification.localNotification({
-        message: payload.title,
-        //message: "Test Message"
+        message: payload,
         smallIcon: 'icon.png',
         largeIcon: 'icon.png',
         vibrate: vibration[1]==='true' ? true : false,
@@ -112,7 +109,7 @@ export default class FirebaseConfig{
     }
     else{
       PushNotificationIOS.presentLocalNotification({
-        alertTitle: payload.title,
+        alertTitle: payload,
         isSilent: notification[1]==='true' ? true : false
       });
     }  

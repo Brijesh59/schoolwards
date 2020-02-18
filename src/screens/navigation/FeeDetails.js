@@ -1,46 +1,31 @@
 import React, { useEffect, useState } from 'react'
-import {StyleSheet, View, } from 'react-native'
-import { Container, Content, Text, Card, CardItem, Body, Left, Right} from 'native-base'
+import {StyleSheet } from 'react-native'
+import { Container, Content, Text, Card, CardItem, Left, Right} from 'native-base'
 import CustomHeader from '../../components/common/CustomHeader'
 import ActivityLoader from '../../components/common/ActivityLoader'
-import axios from 'axios'
-import APIs from '../../utils/api'
-import { ScrollView } from 'react-native-gesture-handler'
 import config from '../../utils/config'
+import NetworkRequest from '../../utils/NetworkRequest'
 
-
-function FeeDetails(props) {
-    const Class = props.Class
-    const Section = props.Section
+function FeeDetails({Class, Section}) {
     const [items, setItems] = useState({})
     const [isLoading, setIsLoading] = useState(false)
     const [emptyData, setEmptyData] = useState(null)
     const [errorData, setErrorData] = useState(null)
 
     useEffect( ()=>{
-        setIsLoading(true)
-        let formData = new FormData();
-        formData.append('division', Section)
-        formData.append('standard', Class)
-        formData.append('appname', 'svs')
-    
-        axios.post( APIs.GET_FEE, formData, 
-            {
-                headers: {
-                    'content-type': 'multipart/form-data'
-                }
-            }
-        )
-        .then(async(res) => {
-            setIsLoading(false)
-            const response = res.data.response
-            
-            if(response === 'success'){
-                console.log('Login Success.')  
-                const data = res.data.fee_structure
-                
+        async function getFeeDetailsForSelectedStudents(){
+            setIsLoading(true)
+            let formData = new FormData();
+            formData.append('division', Section)
+            formData.append('standard', Class)
+            formData.append('appname', 'svs')
+            const networkRequest = new NetworkRequest()
+            const responseData = await networkRequest.getFeeDetails(formData)
+            setIsLoading(false)  
+            if(responseData.response === 'success'){
+                console.log("Data, ", responseData)
+                const data = responseData.fee_structure 
                 if(data.length === 0){
-                    console.log("data: ", data)
                     setEmptyData("No data Available.")
                     return; 
                 }
@@ -60,18 +45,11 @@ function FeeDetails(props) {
                     }]
                 })
                 setItems(installMentsList)
-                console.log("Installments: ", installMentsList)
             }
-            else{
-                setIsLoading(false)
+            else
                 setErrorData(error.message)
-                console.log('Login Failed => ', response)  
-            }
-        })
-        .catch(error => {
-            setIsLoading(false)
-            setErrorData(error.message)
-        })
+        }
+        getFeeDetailsForSelectedStudents()
     }, [])
     
     const renderItems = []
@@ -116,13 +94,11 @@ function FeeDetails(props) {
             </Card>    
         )
     }
-    console.log("RenderItems: ", items)
     return (
         <Container> 
             <CustomHeader title="Fee Details" />
             <Content 
                 contentContainerStyle={styles.container}> 
-                {/* <ScrollView style={{width: '100%'}}> */}
                     {renderItems}
                     {isLoading && <ActivityLoader />}
                     {emptyData && 
@@ -134,9 +110,7 @@ function FeeDetails(props) {
                         <Text style={styles.errorData}>
                             {errorData}
                         </Text>
-                    }
-                {/* </ScrollView> */}
-               
+                    }           
             </Content>
         </Container>
     )
@@ -149,7 +123,7 @@ const styles = StyleSheet.create({
     card:{
         flex: 1,
         width: '95%',
-        marginLeft: '2.5%',
+        // marginLeft: '2.5%',
         marginTop: '2%',
     },
     header:{
@@ -173,8 +147,7 @@ const styles = StyleSheet.create({
     },
     errorData:{
         padding: 20,
-    }
-    
+    }  
 });
 
 export default FeeDetails

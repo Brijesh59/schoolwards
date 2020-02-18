@@ -19,7 +19,7 @@ firebase.messaging().setBackgroundMessageHandler( async (remoteMessage) => {
     // Cache the payload data...
     await cachePayloadData()
     // send local notification
-    await firebase.sendLocalNotification(payload);
+    await firebase.sendLocalNotification(payload.title);
 });
 
 AppRegistry.registerComponent(appName, () => App);

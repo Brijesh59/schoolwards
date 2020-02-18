@@ -4,6 +4,8 @@ import { Actions } from 'react-native-router-flux'
 import AsyncStorage from '@react-native-community/async-storage'
 import * as Progress from 'react-native-progress'
 import config from '../utils/config'
+import NetworkRequest from '../utils/NetworkRequest'
+import FirebaseConfig from '../utils/Firebase'
 
 const schoolLogo = '../assets/schoolLogo.png'
 
@@ -12,7 +14,8 @@ class SplashScreen extends Component {
         progress: 0
     }
     
-    componentDidMount(){
+    componentDidMount = async() => {
+
         let loadingInterval = setInterval(()=>{
             this.setState( {
                 progress: this.state.progress + 0.1

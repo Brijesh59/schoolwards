@@ -70,7 +70,7 @@ export default function EventDetails(props) {
             } 
         </Button>
     
-    console.log('Homework Screen Re-rendered ...', details)
+    console.log('Homework Screen Re-rendered ...')
     return (
         <View>
             <Card style={styles.container} >

@@ -15,6 +15,8 @@ import CustomButton from '../components/common/CustomButton'
 import ActivityLoader from '../components/common/ActivityLoader'
 import {FilterIcon, SortIcon, LogoutIcon, MenuIcon} from '../components/common/Icons'
 import config from '../utils/config'
+import {getData} from '../utils/functions'
+import NetworkRequest from '../utils/NetworkRequest'
 
 export default class Home extends React.Component{
 
@@ -117,11 +119,15 @@ export default class Home extends React.Component{
     }
 
     getCachedData = async() => {
-        const cachedData = await AsyncStorage.getItem('cachedData')
-        const JSONData = JSON.parse(cachedData)
+        const JSONData = await getData()
         const selectedStudents = JSONData.students.map((student => student.firstName))
-        const selectedStudentsApplied = JSONData.students.map((student => student.firstName))
-        this.setState({events: JSONData.events, students: JSONData.students, selectedStudents, selectedStudentsApplied })
+        const selectedStudentsApplied = [...selectedStudents]
+        this.setState({
+            events: JSONData.events, 
+            students: JSONData.students, 
+            selectedStudents, 
+            selectedStudentsApplied 
+        })
     }
 
     getStudentName(studentId){
@@ -131,22 +137,59 @@ export default class Home extends React.Component{
 
     updateState = async() => {
         console.log("Updating the Home state ...")
-        const cachedData = await AsyncStorage.getItem('cachedData')
-        const JSONDATA = JSON.parse(cachedData)
-        console.log(JSONDATA)
+        const JSONDATA = await getData()
         this.setState({events: JSONDATA.events, students: JSONDATA.students})
+        this.handleSort()
     }
 
+    checkIfUserLoggedInToOtherDevice = async() => {
+        const formData = new FormData()
+        const networkRequest = new NetworkRequest()
+        
+        const [mobile, fcmToken] = await AsyncStorage.multiGet(["mobile", "fcmToken"])
+        formData.append('mobile_no', mobile[1])
+        formData.append('device_id', fcmToken[1])
+        formData.append('appname', config.schoolName)
+        const data = await networkRequest.getPendingContents(formData)
+        return data 
+    }
+
+
     componentDidMount = async() => {
+        /* Check if user logged in to other device, if yes, then logout from
+           current device & redirect to login screen.
+           Else, cache any pending contents  
+        */
+        const data = this.checkIfUserLoggedInToOtherDevice()
+        if(data.device_valid === 'no'){
+            await AsyncStorage.setItem('isUserLoggedIn', 'false')
+            await this.firebase.sendLocalNotification('You have signed in from another device.\nHence you are being logged out.');
+            Actions.auth()
+            return
+        }
+
+        // const status = await cachePayloadData()
+        // if(status === 'failure'){
+        //     await AsyncStorage.setItem('isUserLoggedIn', 'false')
+        //     await this.firebase.sendLocalNotification('You have signed in from another device.\nHence you are being logged out.');
+        //     Actions.auth()
+        //     return
+        // }
+
         this.unsubscribe = firebase.messaging().onMessage( async remoteMessage => {
-            await cachePayloadData()
-
-            const JSONData = JSON.parse(remoteMessage.data.note)
-            console.log("Notificaion Recieved: ", JSON.stringify(remoteMessage.data))
-            const payload  = JSONData.non_interaction_attributes.display_attributes
-            await this.firebase.sendLocalNotification(payload);
-
-            this.updateState();
+            const status = await cachePayloadData()
+            if(status === 'failure'){
+                await AsyncStorage.setItem('isUserLoggedIn', 'false')
+                await this.firebase.sendLocalNotification('You have been logged out.');
+                Actions.auth()
+                return;
+            }
+            else{
+                const JSONData = JSON.parse(remoteMessage.data.note)
+                const payload  = JSONData.non_interaction_attributes.display_attributes
+                await this.firebase.sendLocalNotification(payload.title);
+                this.updateState();
+            }
         });
         const mobile = await AsyncStorage.getItem('mobile')
         this.firebase.onFirebaseTokenRefresh(mobile) 
@@ -154,12 +197,14 @@ export default class Home extends React.Component{
         AppState.addEventListener('change', this.handleAppStateChange)
         
         // get the cachedData & set the state
-        this.getCachedData() 
+        await this.getCachedData() 
+        this.handleSort()
     }
 
-    handleAppStateChange = (nextAppState) => {
+    handleAppStateChange = async(nextAppState) => {
         if(this.state.appState.match(/inactive|background/) && nextAppState === 'active'){
             console.log("App has come to foreground")
+            //await cachePayloadData()
             this.updateState()
         }
         this.setState({
@@ -171,10 +216,6 @@ export default class Home extends React.Component{
         AppState.removeEventListener('change', this.handleAppStateChange)
         this.unsubscribe();
         console.log("Unsubscribed")
-    }
-
-    UNSAFE_componentWillReceiveProps(props, state){
-        console.log("Props: ", props)
     }
 
     closeDrawer = () => { this._drawer._root.close() }
@@ -198,34 +239,20 @@ export default class Home extends React.Component{
         })   
     }
 
-    handleSort = () => {
-        this.setState({showSortModal: false})
-        if(this.state.sortNewtoOld){
-            
-        }
-        else{
-
-        }
-    }
-
     handleFilterApply = () => {
-        console.log("Apply Filter Modal")
         this.setState({  
             showFilterModal: false,
             selectedStudentsApplied: [...this.state.selectedStudents],
             selectedTypesApplied: [...this.state.selectedTypes]
          })
-        console.log("State: ", this.state.selectedTypes)
     }
 
     handleFilterCancel = () => {
-        console.log("Close Filter Modal")
         this.setState({  
             showFilterModal: false,
             selectedStudents: [...this.state.selectedStudentsApplied],
             selectedTypes: [...this.state.selectedTypesApplied]
          })
-        console.log("State: ", this.state.selectedTypes)
     }
 
     handleFilterStudentCheckBox = (prnNo) => {

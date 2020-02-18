@@ -94,6 +94,86 @@ export async function addEvent(event){
     await AsyncStorage.setItem('cachedData', JSON.stringify(dataToSave))
 }
 
+export async function addStudentsAndEventsUponLogin(students, commonEvents){
+    const dataToSave = {
+        students: [],
+        events: []
+    }
+
+    // Saving Students details
+    for(const student of students){
+        const profileUrl = await cacheFile(student.photo)
+        dataToSave.students.push({
+            studentId: student.id,
+            prnNo: student.prn_no,
+            firstName: student.first_name,
+            name: `${student.first_name} ${student.middle_name} ${student.last_name}`,
+            dateOfBirth: student.dob,
+            gender: student.gender,
+            address: `${student.address}, ${student.city}, ${student.pincode}`,
+            city: student.city,
+            pincode: student.pincode,
+            profileImage: profileUrl,
+            fatherName: student.father_name,
+            motherName: student.mother_name,
+            fatherEmail: student.father_email,
+            motherEmail: student.mother_email,
+            fatherMobile: student.father_mobile,
+            motherMobile: student.mother_mobile,
+            preferenceContact: student.prefence_contact,
+            class: student.standard,
+            division: student.division,
+            rollNo: student.roll_no
+        })
+    }
+
+    // Saving Individual Student events
+    students.forEach(student => {
+        const studentId = student.id
+        const studentName = student.first_name
+        student.events.forEach(event => {
+            const NIA_NDA = event.non_interaction_attributes.non_display_attributes
+            const NIA_DA  = event.non_interaction_attributes.display_attributes
+            dataToSave.events.push({
+                id: NIA_NDA.id,
+                title: NIA_DA.name,
+                description: NIA_DA.description,
+                type: NIA_DA.series,
+                to: 'individual',
+                createdOn: NIA_DA.created_on,
+                dateTime: NIA_DA.date_time,
+                attatchment: NIA_DA.url != "" ? NIA_DA.url : null,
+                attatchmentExtention: NIA_NDA.type,
+                venue: NIA_DA.venue,
+                studentName: studentName,
+                studentId: studentId
+            })
+        })
+    })
+
+    // Saving Common events
+    commonEvents.forEach(event => {
+        const NIA_NDA = event.non_interaction_attributes.non_display_attributes
+        const NIA_DA  = event.non_interaction_attributes.display_attributes
+        dataToSave.events.push({
+            id: NIA_NDA.id,
+            title: NIA_DA.name,
+            description: NIA_DA.description,
+            type: NIA_DA.series,
+            to: 'all',
+            createdOn: NIA_DA.created_on,
+            dateTime: NIA_DA.date_time,
+            attatchment: NIA_DA.url != "" ? NIA_DA.url : null,
+            attatchmentExtention: NIA_NDA.type,
+            venue: NIA_DA.venue,
+            studentName: null,
+            studentId: null
+        })
+    })
+
+    await AsyncStorage.setItem('cachedData', JSON.stringify(dataToSave))
+}
+
 export async function updateEventAttatchment(eventId, attatchment){
     const cachedData = await AsyncStorage.getItem('cachedData')
     const data = JSON.parse(cachedData)
@@ -120,39 +200,37 @@ export async function cachePayloadData(){
     formData.append('appname', app_config.schoolName)
     const data = await networkRequest.getPendingContents(formData) 
     if(data.device_valid === 'yes'){
-      const cachedData = await AsyncStorage.getItem('cachedData')
-      const JSONData = JSON.parse(cachedData)
-
+      if(data.pending_objects.length === 0){
+        return
+      }  
+      const JSONData = await getData()
       const dataToSave = {
         students: [],
         events: []
       }
-      console.log("fetchEvent started ...")
       const [dataToSave2, objects] = await fetchEachEvent(data.pending_objects)
-      console.log("fetchEvent completed ...")
       dataToSave.events = [...JSONData.events, ...dataToSave2.events]
       dataToSave.students = [...JSONData.students, ...dataToSave2.students]
       
-      console.log("DatatoSave: ", JSON.stringify(dataToSave))
       await AsyncStorage.setItem('cachedData', JSON.stringify(dataToSave))
-      console.log("Data Cached ...")
 
       // Notify the server that Notification has been recieved ...
-      const formData = new FormData()
-      formData.append('mobile_no', mobile)
-      formData.append('device_id', fcmToken)
-      formData.append('objects', JSON.stringify(objects))
-      formData.append('appname', app_config.schoolName)
-      const networkRequest = new NetworkRequest()
-      const response = await networkRequest.updateRecievePushStatus(formData) 
-      console.log("Response of recieved Notifications: ", response)
+      console.log("JSON.stringify: ", JSON.stringify(objects))
+      const formData2 = new FormData()
+      formData2.append('mobile_no',  mobile[1])
+      formData2.append('device_id', fcmToken[1])
+      formData2.append('objects', JSON.stringify(objects))
+      formData2.append('appname', app_config.schoolName)
+      await networkRequest.updateRecievePushStatus(formData2) 
     }
-    else
-      console.log("Invalid Device ID ")
+    else{
+        console.log("Invalid Device ID ")
+        return 'failure'
+    }
+      
 }
 
 export async function cacheFile(uri, type = 'png'){
-    // download file/image/.. and save it to phone storage
     if(uri === '' || uri === null){
         return ''
     }
@@ -173,8 +251,7 @@ export async function cacheFile(uri, type = 'png'){
             appendExt: extention
         }
         const res = await RNFetchBlob.config(options).fetch('GET', uri)
-        const status = res.info().status
-        if(status == 200) {
+        if(res.info().status == 200) {
             console.log('The file saved to: ', res.path())
             return {
                 isFileSaved: true,
@@ -200,22 +277,12 @@ async function fetchEachEvent(pendingObjects){
         events: []
     }
     const objects = []
-    console.log("Fetch Stated")
     for(const obj of pendingObjects){
-        console.log("Object: ", obj)
+        console.log("Each Object: ", obj)
         const data = await networkRequest.getEvent(obj.type, obj.id)
-        console.log("Each Pending Data: ", data)
         const NIA_NDA = data.non_interaction_attributes.non_display_attributes
         const NIA_DA  = data.non_interaction_attributes.display_attributes
        
-        // download and save attatchment if available
-        // let attachmentUrl = null
-        // if(NIA_NDA.attachment_url){
-        //     const data = await cacheFile(NIA_NDA.attachment_url, NIA_NDA.type).then(d => d)
-        //     if(data.isFileSaved){
-        //         attachmentUrl = data.filePath
-        //     }
-        // }
         dataToSave.events.push({
             id: NIA_NDA.id,
             title: NIA_DA.title,
@@ -239,6 +306,5 @@ async function fetchEachEvent(pendingObjects){
             timezone: 'GMT 5:30'
         })
     }
-    console.log("Fetch Completed")
     return [dataToSave, objects]
 }

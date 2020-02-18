@@ -38,9 +38,22 @@ export default class NetworkRequest{
         }
     }
 
+    async getFeeDetails(formData){
+        try{
+            const response = await axios.post(
+                `${APIs.GET_FEE}`, 
+                 formData, 
+                 this.options)
+            return response.data
+        }
+        catch(error){
+            return error.message
+        }
+    }
+    
     async updateRecievePushStatus(formData){
         try{
-            const response = await axios.post('http://www.schoolwards.com/schooladmin/Parentsapp/updatereceivepushstatus', formData, this.options)
+            const response = await axios.post(APIs.UPDATE_RECIEVE_PUSH_STATUS, formData, this.options)
             return response.data
         }
         catch(error){
