@@ -95,7 +95,8 @@ export default function HomeworkDetails(props) {
                 <CardItem>
                     <Left>
                         { 
-                            details.attatchment != null && (
+                            details.attatchment != undefined &&
+                            details.attatchment != "" && (
                                 details.attatchment.includes('http') ? 
                                 downloadAttatchment :
                                 openAttatchment 

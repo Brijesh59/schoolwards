@@ -2,14 +2,14 @@ import React, { useState } from 'react'
 import { View, StyleSheet, Image, Alert } from 'react-native'
 import { Card, CardItem, Left, Text, Right, Body, Button, Icon } from 'native-base'
 import {AnnouncementIcon, CalendarIcon, HomeworkIcon, MessageIcon, NewsIcon, TimetableIcon, ContactIcon, ContactsIcon, TagIcon} from './Icons'
-import { cacheFile } from '../../utils/functions'
+import { cacheFile, updateEventAttatchment } from '../../utils/functions'
 import AsyncStorage from '@react-native-community/async-storage'
 import FileViewer from 'react-native-file-viewer';
 import ActivityLoader from './ActivityLoader'
 import {formatDateTime} from '../../utils/functions'
 import config from '../../utils/config'
 
-export default function CustomCard({title, type, description, to, studentName, dateTime, createdOn,onCardPressed, attatchment, attatchmentExtention, updateHomeState}) {
+export default function CustomCard({id, title, type, description, to, studentName, createdOn, onCardPressed, attatchment, attatchmentExtention, updateHomeState}) {
 
     const [isAttatchDownloadSuccess, setIsAttatchDownloadSuccess] = useState(false)
     const [downloading, setDownloading] = useState(false)
@@ -33,15 +33,6 @@ export default function CustomCard({title, type, description, to, studentName, d
         }
     }
     
-    const openAttatchment = 
-         <Button 
-            rounded
-            style={{backgroundColor: '#F7F8F7', color: 'black',elevation:0,shadowOpacity:0,shadowColor:'transparent'}}
-            iconLeft 
-            onPress={()=>handleAttatchmentOpen()}>
-            <Icon name="attach" style={{color: '#363636', transform: [{rotateZ: '30deg'}]}}/>
-            <Text style={{color: '#363636'}}>Open</Text>
-        </Button>
 
     const handleAttatchmentOpen = () => {
         console.log('Open')
@@ -49,28 +40,12 @@ export default function CustomCard({title, type, description, to, studentName, d
             .then(res => {})
             .catch(error => {})
     }
-    
-    const downloadAttatchment = 
-        <Button 
-            rounded
-            disabled={downloading}
-            style={{backgroundColor: '#F7F8F7', color: 'black',elevation:0,shadowOpacity:0,shadowColor:'transparent'}}
-            iconLeft 
-            onPress={() => handleAttatchmentDownload()}>
-            <Icon name="attach" style={{color: '#363636', transform: [{rotateZ: '30deg'}]}}/>
-            {
-                downloading ? 
-                <ActivityLoader /> :
-                <Text style={{color: '#363636'}}>Download</Text>
-            } 
-        </Button>
-
 
     const handleAttatchmentDownload = async() => {
         setDownloading(true)
         const data = await cacheFile(attatchment, attatchmentExtention).then(d => d)
         if(data.isFileSaved){
-            await updateAttatchmentPathLocally(data.filePath) 
+            await updateEventAttatchment(id, data.filePath) 
             setIsAttatchDownloadSuccess(true)
             setDownloading(false)
             updateHomeState()  
@@ -97,6 +72,31 @@ export default function CustomCard({title, type, description, to, studentName, d
         await AsyncStorage.setItem('cachedData', JSON.stringify(dataToSave))
     }
 
+    const openAttatchment = 
+        <Button 
+           rounded
+           style={{backgroundColor: '#F7F8F7', color: 'black',elevation:0,shadowOpacity:0,shadowColor:'transparent'}}
+           iconLeft 
+           onPress={()=>handleAttatchmentOpen()}>
+           <Icon name="attach" style={{color: '#363636', transform: [{rotateZ: '30deg'}]}}/>
+           <Text style={{color: '#363636'}}>Open</Text>
+        </Button>
+
+    const downloadAttatchment = 
+        <Button 
+            rounded
+            disabled={downloading}
+            style={{backgroundColor: '#F7F8F7', color: 'black',elevation:0,shadowOpacity:0,shadowColor:'transparent'}}
+            iconLeft 
+            onPress={() => handleAttatchmentDownload()}>
+            <Icon name="attach" style={{color: '#363636', transform: [{rotateZ: '30deg'}]}}/>
+            {
+                downloading ? 
+                <ActivityLoader /> :
+                <Text style={{color: '#363636'}}>Download</Text>
+            } 
+        </Button>
+
     return (
         <View>
             <Card style={styles.container} >
@@ -120,7 +120,7 @@ export default function CustomCard({title, type, description, to, studentName, d
                 <CardItem>
                     <Left>
                         { 
-                            attatchment != null && (
+                            attatchment != '' && (
                                 attatchment.includes('http') ? 
                                 downloadAttatchment :
                                 openAttatchment 

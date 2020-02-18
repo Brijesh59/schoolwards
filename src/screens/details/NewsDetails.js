@@ -18,6 +18,7 @@ export default function NewsDetails(props) {
     
     async function fetchData(){
         const details = await getEvent(props.details.id)
+        console.log("Details: ", details)
         setDetails(details)
     }
     useEffect(()=>{
@@ -95,7 +96,7 @@ export default function NewsDetails(props) {
                 <CardItem>
                     <Left>
                         { 
-                            details.attatchment != null && (
+                           details.attatchment != undefined &&  details.attatchment != "" && (
                                 details.attatchment.includes('http') ? 
                                 downloadAttatchment :
                                 openAttatchment 

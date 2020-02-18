@@ -17,6 +17,7 @@ import {FilterIcon, SortIcon, LogoutIcon, MenuIcon} from '../components/common/I
 import config from '../utils/config'
 import {getData} from '../utils/functions'
 import NetworkRequest from '../utils/NetworkRequest'
+import {deleteAllData} from '../db'
 
 export default class Home extends React.Component{
 
@@ -27,83 +28,6 @@ export default class Home extends React.Component{
         showSortModal: false,
         sortOldToNew: false,
         sortNewtoOld: true,
-        cards: [
-            {
-                title:"Test Announcement",
-                type:"Announcement",
-                description:"Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
-                to: "all",
-                dateTime:"16 January 2020, 09:57 AM",
-                attatchment: null
-            },
-            {
-                title:"Test Announcement",
-                type:"Announcement",
-                description:"Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
-                to: "individual",
-                studentName:"Aman Verma",
-                dateTime:"16 January 2020, 09:57 AM",
-                attatchment: null
-            },
-            {
-                title:"Test Event",
-                type:"Event",
-                description:"Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
-                to: "individual",
-                studentName:"Vikas Verma",
-                dateTime:"20 February 2020, 09:57 AM",
-                venue: "School Hall",
-                startDate: "23 February 2020, 09:57 AM",
-                endDate: "25 February 2020, 09:57 AM",
-                attatchment: null
-            },
-            {
-                title:"Test Homework",
-                type:"Homework",
-                description:"Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
-                assignedBy: "Raman Vohra",
-                to: "individual",
-                studentName:"Vikas Verma",
-                dateTime:"20 February 2020, 09:57 AM",
-                attatchment: "https://images.unsplash.com/photo-1579705743135-bc6ef4f6a8d7?ixlib=rb-1.2.1&auto=format&fit=crop&w=334&q=80",
-            },
-            {
-                title:"Test Homework 2",
-                type:"Homework",
-                description:"Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
-                assignedBy: "Raman Vohra",
-                to: "individual",
-                studentName:"Vikas Verma",
-                dateTime:"20 February 2020, 09:57 AM",
-                attatchment: null,
-            },
-            {
-                title:"Test Message",
-                type:"Message",
-                description:"Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
-                sendBy: "Akansha Vats",
-                to: "individual",
-                studentName:"Vikas Verma",
-                dateTime:"20 February 2020, 09:57 AM"
-            },
-            {
-                title:"Test News",
-                type:"News",
-                description:"Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
-                to: "individual",
-                studentName:"Samay Verma",
-                dateTime:"20 February 2020, 09:57 AM",
-                attatchment: null,
-            },
-            {
-                title:"Test Timetable",
-                type:"Timetable",
-                description:"Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
-                to: "individual",
-                studentName:"Samay Verma",
-                dateTime:"20 February 2020, 09:57 AM"
-            }
-        ],
         events: [],
         students: [],
         selectedStudents: [],
@@ -163,7 +87,11 @@ export default class Home extends React.Component{
         const data = this.checkIfUserLoggedInToOtherDevice()
         if(data.device_valid === 'no'){
             await AsyncStorage.setItem('isUserLoggedIn', 'false')
+            await AsyncStorage.setItem('cachedData', 
+            JSON.stringify({students:[], events:[]}))
             await this.firebase.sendLocalNotification('You have signed in from another device.\nHence you are being logged out.');
+
+            await deleteAllData()    
             Actions.auth()
             return
         }
@@ -329,6 +257,8 @@ export default class Home extends React.Component{
                         await AsyncStorage.setItem('isUserLoggedIn', 'false')
                         await AsyncStorage.setItem('cachedData', 
                             JSON.stringify({students:[], events:[]}))
+                        
+                        await deleteAllData()    
                         Actions.auth()
                     },
                     style: 'ok'
@@ -338,18 +268,17 @@ export default class Home extends React.Component{
     }
 
     render(){
-        console.log("Home Screen Rerender ...")
+        console.log("Home Screen Rerender ...", this.state.events)
         const filteredEvents = 
             this.state.events
                 .filter(event =>        
                     this.state.selectedTypesApplied.indexOf(event.type) != -1)
                 .filter(event => 
                     this.state.selectedStudentsApplied.indexOf(this.getStudentName(event.studentId))!=-1
-                    || event.studentId === null 
-                )
-                                    
-        // console.log("Events: ", this.state.events)
-        // console.log("Filtered Events: ", filteredEvents)
+                    || event.studentId === '' 
+                )                       
+        console.log("Events: ", this.state.events)
+        console.log("Filtered Events: ", filteredEvents)
         // console.log("Selected Students: ", this.state.selectedStudentsApplied)
         
         const header = 
@@ -397,6 +326,7 @@ export default class Home extends React.Component{
                             }
                             >
                             <CustomCard 
+                                id={card.item.id}
                                 title={card.item.title}
                                 type={card.item.type}
                                 description={card.item.description}

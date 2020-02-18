@@ -94,7 +94,8 @@ export default function EventDetails(props) {
                 <CardItem>
                     <Left>
                         { 
-                            details.attatchment != null && (
+                            details.attatchment != undefined &&
+                            details.attatchment != '' && (
                                 details.attatchment.includes('http') ? 
                                 downloadAttatchment :
                                 openAttatchment 
