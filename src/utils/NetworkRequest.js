@@ -13,6 +13,16 @@ export default class NetworkRequest{
         }
     } 
 
+    async getOTP(formData){
+        try{
+            const response = await axios.post(APIs.GET_OTP, formData, this.options)
+            return response.data
+        }
+        catch(error){
+            return error.message
+        }
+    }
+
     async getPendingContents(formData){
         try{
             const response = await axios.post(APIs.GET_PENDING_CONTENTS, formData, this.options)

@@ -12,7 +12,7 @@ export const addStudent = student => new Promise((resolve, reject) => {
         .then(realm => {
             try{
                 realm.write(()=>{
-                    realm.create(STUDENT_SCHEMA, student)
+                    realm.create(STUDENT_SCHEMA, student, 'modified')
                 })
                 resolve(students)
             }
@@ -29,7 +29,7 @@ export const addStudents = students => new Promise((resolve, reject) => {
             try{
                 realm.write(()=>{
                     students.forEach(student => {
-                        realm.create(STUDENT_SCHEMA, student)
+                        realm.create(STUDENT_SCHEMA, student, 'modified')
                     });
                 })
                 resolve(students)
@@ -45,7 +45,7 @@ export const getStudentById = (studentId) => new Promise((resolve, reject) => {
     Realm.open(databaseOptions)
         .then(realm => {
             const students = realm.objects(STUDENT_SCHEMA)
-            const filteredStudents = students.filtered(`studentId = ${studentId}`)
+            const filteredStudents = students.filtered(`studentId = "${studentId}" AND isDeleted = false`)
             resolve(filteredStudents)
         })
         .catch(error => reject(error))
@@ -54,7 +54,8 @@ export const getStudentById = (studentId) => new Promise((resolve, reject) => {
 export const getAllStudents = () => new Promise((resolve, reject) => {
     Realm.open(databaseOptions)
         .then(realm => {
-            const students = realm.objects(STUDENT_SCHEMA)
+            const data = realm.objects(STUDENT_SCHEMA)
+            const students = data.filtered(`isDeleted = false`)
             resolve(students)
         })
         .catch(error => reject(error))
@@ -67,7 +68,7 @@ export const addEvent = event => new Promise((resolve, reject) => {
     .then(realm => {
         try{
             realm.write(()=>{
-                realm.create(EVENT_SCHEMA, event)
+                realm.create(EVENT_SCHEMA, event, 'modified')
             })
             resolve(event)
         }
@@ -84,7 +85,7 @@ export const addEvents = events => new Promise((resolve, reject) => {
         try{
             realm.write(()=>{
                 events.forEach(event => {
-                    realm.create(EVENT_SCHEMA, event)
+                    realm.create(EVENT_SCHEMA, event, 'modified')
                 });
             })
             resolve(events)
@@ -100,7 +101,7 @@ export const getEventById = eventId => new Promise((resolve, reject) => {
     Realm.open(databaseOptions)
         .then(realm => {
             const events = realm.objects(EVENT_SCHEMA)
-            const filteredEvent = events.filtered(`id = "${eventId}"`)
+            const filteredEvent = events.filtered(`id = "${eventId}" AND isDeleted = false`)
             resolve(filteredEvent)
         })
         .catch(error => reject(error))
@@ -110,8 +111,7 @@ export const getEventsByStudentName = studentName => new Promise((resolve, rejec
     Realm.open(databaseOptions)
     .then(realm => {
         const events = realm.objects(EVENT_SCHEMA)
-        const filteredEvents = events.filtered(`studentName = ${studentName}`)
-        realm.close()
+        const filteredEvents = events.filtered(`studentName = "${studentName}" AND isDeleted = false`)
         resolve(filteredEvents)
     })
     .catch(error => reject(error))
@@ -120,7 +120,10 @@ export const getEventsByStudentName = studentName => new Promise((resolve, rejec
 export const getAllEvents = () => new Promise((resolve, reject) => {
     Realm.open(databaseOptions)
         .then(realm => {
-            const events = realm.objects(EVENT_SCHEMA)
+            const data = realm.objects(EVENT_SCHEMA)
+            console.log('Data: ', data)
+            const events = data.filtered(`isDeleted = false`)
+            console.log("Events: ", events)
             resolve(events)
         })
         .catch(error => reject(error))
@@ -139,14 +142,37 @@ export const updateEventAttatchmentUri = (eventId, attatchmentUri) => new Promis
     .catch(error => reject(error))
 })
 
-
 export const deleteAllData = ()=> new Promise((resolve, reject) => {
     Realm.open(databaseOptions)
     .then(realm => {
         realm.write(()=>{
-            realm.deleteAll()
+            const allEvents = realm.objects(EVENT_SCHEMA)
+            const allStudents = realm.objects(STUDENT_SCHEMA)
+            for(const key in allEvents){
+                allEvents[key].isDeleted = true
+            }
+            for(const key in allStudents){
+                allStudents[key].isDeleted = true
+            }
+            console.log('isDeletedTrue: true')
         })
-        resolve('success')
+        resolve('All data deleted(isDeleted set to true)')
+    })
+    .catch(error => reject(error))
+})
+
+export const deleteUnusedData = ()=> new Promise((resolve, reject) => {
+    Realm.open(databaseOptions)
+    .then(realm => {
+        realm.write(()=>{
+            const allEvents = realm.objects(EVENT_SCHEMA)
+            const allStudents = realm.objects(STUDENT_SCHEMA)
+            const filteredEvents = allEvents.filtered(`isDeleted = true`)
+            const filteredStudents = allStudents.filtered(`isDeleted = true`)
+            realm.delete(filteredEvents)
+            realm.delete(filteredStudents)
+        })
+        resolve('Unused Data wiped successfully')
     })
     .catch(error => reject(error))
 })

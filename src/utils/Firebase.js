@@ -75,7 +75,7 @@ export default class FirebaseConfig{
   }
 
   onFirebaseTokenRefresh(mobile){
-    firebase.messaging().onTokenRefresh( async (fcmToken) => {
+    const unSubscribeFromTokenRefresh = firebase.messaging().onTokenRefresh( async (fcmToken) => {
       console.log('Firebase Token Refreshed.')
       // Update fcmToken in localStore
       await AsyncStorage.setItem('fcmToken', fcmToken)
@@ -93,7 +93,7 @@ export default class FirebaseConfig{
       else
         console.log('Token Updated on Server Failed: ', data) 
     });
-
+    return unSubscribeFromTokenRefresh
   }
 
   async sendLocalNotification(payload) {

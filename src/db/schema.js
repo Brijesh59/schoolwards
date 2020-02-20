@@ -24,7 +24,11 @@ export const StudentSchema = {
         preferenceContact: 'string',
         class: 'string',
         division: 'string',
-        rollNo: 'string'
+        rollNo: 'string',
+        isDeleted: {
+            type: 'bool',
+            default: false
+        }
     }
 }
 
@@ -43,6 +47,10 @@ export const EventSchema = {
         attatchmentExtention: 'string',
         venue: 'string',
         studentName: 'string',
-        studentId: 'string'
+        studentId: 'string',
+        isDeleted: {
+            type: 'bool',
+            default: false
+        }
     }
 }

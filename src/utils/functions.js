@@ -76,7 +76,7 @@ export function convertObjToArray(obj){
 
 export async function getData(){
     /* Returns an Object like: { students: [], events: [] } */
-
+    console.log('Getdata fn called')
     try{
         const students = await getAllStudents()
         const events = await getAllEvents()
@@ -97,10 +97,17 @@ export async function getData(){
     // return { students: [], events: [] }
 }
 
+export async function getStudentsList(){
+    console.log('getStudentsList fn called')
+    const students = await getAllStudents()
+    return convertObjToArray(students)
+}
+
 export async function getEvent(eventId){
     // const cachedData = await AsyncStorage.getItem('cachedData')
     // const data = JSON.parse(cachedData)
     // return data.events.find(event => event.id === eventId)
+    console.log('getEvent fn called')
     const event = await getEventById(eventId)
     return event["0"]
 
@@ -122,41 +129,65 @@ export async function getEvent(eventId){
 // }
 
 export async function addStudentsAndEventsUponLogin(students, commonEvents){
+    console.log('addStudentsAndEventsUponLogin fn called')
     const studentsData = []
     const eventsData = []
+    try{
+        // Saving Students details
+        for(const student of students){
+            const profileUrl = await cacheFile(student.photo)
+            studentsData.push({
+                studentId: student.id,
+                prnNo: student.prn_no,
+                firstName: student.first_name,
+                name: `${student.first_name} ${student.middle_name} ${student.last_name}`,
+                dateOfBirth: student.dob,
+                gender: student.gender,
+                address: `${student.address}, ${student.city}, ${student.pincode}`,
+                city: student.city,
+                pincode: student.pincode,
+                profileImage: profileUrl,
+                fatherName: student.father_name,
+                motherName: student.mother_name,
+                fatherEmail: student.father_email,
+                motherEmail: student.mother_email,
+                fatherMobile: student.father_mobile,
+                motherMobile: student.mother_mobile,
+                preferenceContact: student.prefence_contact,
+                class: student.standard,
+                division: student.division,
+                rollNo: student.roll_no,
+                isDeleted: false
+            })
+        }
 
-    // Saving Students details
-    for(const student of students){
-        const profileUrl = await cacheFile(student.photo)
-        studentsData.push({
-            studentId: student.id,
-            prnNo: student.prn_no,
-            firstName: student.first_name,
-            name: `${student.first_name} ${student.middle_name} ${student.last_name}`,
-            dateOfBirth: student.dob,
-            gender: student.gender,
-            address: `${student.address}, ${student.city}, ${student.pincode}`,
-            city: student.city,
-            pincode: student.pincode,
-            profileImage: profileUrl,
-            fatherName: student.father_name,
-            motherName: student.mother_name,
-            fatherEmail: student.father_email,
-            motherEmail: student.mother_email,
-            fatherMobile: student.father_mobile,
-            motherMobile: student.mother_mobile,
-            preferenceContact: student.prefence_contact,
-            class: student.standard,
-            division: student.division,
-            rollNo: student.roll_no
+        // Saving Individual Student events
+        students.forEach(student => {
+            const studentId = student.id
+            const studentName = student.first_name
+            student.events.forEach(event => {
+                const NIA_NDA = event.non_interaction_attributes.non_display_attributes
+                const NIA_DA  = event.non_interaction_attributes.display_attributes
+                eventsData.push({
+                    id: NIA_NDA.id,
+                    title: NIA_DA.name,
+                    description: NIA_DA.description,
+                    type: NIA_DA.series,
+                    to: 'individual',
+                    createdOn: NIA_DA.created_on,
+                    dateTime: NIA_DA.date_time,
+                    attatchment: NIA_DA.url != "" ? NIA_DA.url : '',
+                    attatchmentExtention: NIA_NDA.type,
+                    venue: NIA_DA.venue,
+                    studentName: studentName,
+                    studentId: studentId,
+                    isDeleted: false
+                })
+            })
         })
-    }
 
-    // Saving Individual Student events
-    students.forEach(student => {
-        const studentId = student.id
-        const studentName = student.first_name
-        student.events.forEach(event => {
+        // Saving Common events
+        commonEvents.forEach(event => {
             const NIA_NDA = event.non_interaction_attributes.non_display_attributes
             const NIA_DA  = event.non_interaction_attributes.display_attributes
             eventsData.push({
@@ -164,40 +195,27 @@ export async function addStudentsAndEventsUponLogin(students, commonEvents){
                 title: NIA_DA.name,
                 description: NIA_DA.description,
                 type: NIA_DA.series,
-                to: 'individual',
+                to: 'all',
                 createdOn: NIA_DA.created_on,
                 dateTime: NIA_DA.date_time,
                 attatchment: NIA_DA.url != "" ? NIA_DA.url : '',
                 attatchmentExtention: NIA_NDA.type,
                 venue: NIA_DA.venue,
-                studentName: studentName,
-                studentId: studentId
+                studentName: '',
+                studentId: '',
+                isDeleted: false
             })
         })
-    })
 
-    // Saving Common events
-    commonEvents.forEach(event => {
-        const NIA_NDA = event.non_interaction_attributes.non_display_attributes
-        const NIA_DA  = event.non_interaction_attributes.display_attributes
-        eventsData.push({
-            id: NIA_NDA.id,
-            title: NIA_DA.name,
-            description: NIA_DA.description,
-            type: NIA_DA.series,
-            to: 'all',
-            createdOn: NIA_DA.created_on,
-            dateTime: NIA_DA.date_time,
-            attatchment: NIA_DA.url != "" ? NIA_DA.url : '',
-            attatchmentExtention: NIA_NDA.type,
-            venue: NIA_DA.venue,
-            studentName: '',
-            studentId: ''
-        })
-    })
+        await addStudents(studentsData)
+        await addEvents(eventsData)
 
-    await addStudents(dataToSave.students)
-    await addEvents(dataToSave.events)
+        return true
+    }
+    catch(error){
+        console.log('Error in saving students & events: ', error)
+        return false
+    }
 }
 
 export async function updateEventAttatchment(eventId, attatchmentUri){
@@ -220,6 +238,7 @@ export async function updateEventAttatchment(eventId, attatchmentUri){
 }
 
 export async function cachePayloadData(){
+    console.log('cachePayloadData fn called')
     const [mobile, fcmToken] = await AsyncStorage.multiGet(["mobile", "fcmToken"])
     const networkRequest = new NetworkRequest()
     const formData = new FormData()
@@ -293,37 +312,40 @@ export async function cacheFile(uri, type = 'png'){
 }
 
 async function fetchEachEvent(pendingObjects){
+    console.log('fetchEachEvent fn called')
     const networkRequest = new NetworkRequest()
     const events = []
     const objects = []
     for(const obj of pendingObjects){
         console.log("Each Pending Object: ", obj)
         const data = await networkRequest.getEvent(obj.type, obj.id)
-        const NIA_NDA = data.non_interaction_attributes.non_display_attributes
-        const NIA_DA  = data.non_interaction_attributes.display_attributes
-       
-        events.push({
-            id: NIA_NDA.id,
-            title: NIA_DA.title,
-            description: NIA_DA.body || NIA_DA.desc,
-            type: NIA_DA.series,
-            to: obj.object_type ==='common' ? 'all' : 'individual',
-            createdOn: NIA_DA.created_on,
-            dateTime: NIA_DA.date_time,
-            attatchment: NIA_NDA.attachment_url ? NIA_NDA.attachment_url : '',
-            attatchmentExtention: NIA_NDA.type,
-            venue: NIA_DA.venue,
-            studentName: obj.student_name,
-            studentId: obj.student_id,
-            studentPrnNo: obj.prn_no
-        })
-        objects.push({
-            id: obj.id,
-            type: obj.type,
-            student_id: obj.student_id,
-            datetime: getTime(),
-            timezone: 'GMT 5:30'
-        })
+        console.log('Event data: ', JSON.stringify(data))
+        if(data){ 
+            const NIA_NDA = data.non_interaction_attributes.non_display_attributes
+            const NIA_DA  = data.non_interaction_attributes.display_attributes  
+            events.push({
+                id: NIA_NDA.id,
+                title: NIA_DA.title,
+                description: NIA_DA.body || NIA_DA.desc || '',
+                type: NIA_DA.series,
+                to: obj.object_type ==='common' ? 'all' : 'individual',
+                createdOn: NIA_DA.created_on,
+                dateTime: NIA_DA.date_time || '',
+                attatchment: NIA_NDA.attachment_url ? NIA_NDA.attachment_url : '',
+                attatchmentExtention: NIA_NDA.type || '',
+                venue: NIA_DA.venue || '',
+                studentName: obj.student_name || '',
+                studentId: obj.student_id || '',
+                studentPrnNo: obj.prn_no || ''
+            })
+            objects.push({
+                id: obj.id,
+                type: obj.type,
+                student_id: obj.student_id,
+                datetime: getTime(),
+                timezone: 'GMT 5:30'
+            })
+        }
     }
     return [events, objects]
 }

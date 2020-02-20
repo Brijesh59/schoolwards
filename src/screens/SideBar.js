@@ -2,11 +2,10 @@ import React, { useEffect, useState } from 'react'
 import {StyleSheet, View, Platform} from 'react-native'
 import { Text, Container, Content, Left, List, ListItem, Thumbnail} from 'native-base'
 import { Actions } from 'react-native-router-flux';
-import AsyncStorage from '@react-native-community/async-storage';
 
 import {CalendarIcon, CallIcon, ContactsIcon, SettingsIcon} from '../components/common/Icons'
 import config from '../utils/config';
-import {getData} from '../utils/functions';
+import {getStudentsList} from '../utils/functions';
 
 const schoolLogo = '../assets/schoolLogo.png'
 
@@ -14,12 +13,13 @@ export default function SideBar() {
     const [students, setStudents] = useState([])
 
     useEffect(() => {
-        const getCachedData = async()=>{
-            const JSONData = await getData()
-            setStudents(JSONData.students)
+        async function getData(){
+          const data = await getStudentsList()
+          setStudents(data)
         }
-        getCachedData()
+        getData()
     }, [])
+
     console.log('Sidebar Screen Re-rendered ...')
     return (
         <Container style={[styles.container]}>

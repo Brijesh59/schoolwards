@@ -1,10 +1,11 @@
 import React, { Component } from 'react'
 import { View, Text, TextInput, StyleSheet } from 'react-native'
 import ActivityLoader from '../components/common/ActivityLoader'
-import APIs from '../utils/api'
 import { Actions } from 'react-native-router-flux'
 import CustomButton from '../components/common/CustomButton'
 import app_config from '../utils/config'
+import NetworkRequest from '../utils/NetworkRequest'
+
 
 class Login extends Component {
 
@@ -16,15 +17,18 @@ class Login extends Component {
       data: '',
     }
   }
-
-  onChangeText = (text) => {
-      this.setState({
-        value: text,
-        data: ''
-      })  
+  componentDidMount = async() => {                        
+  
   }
 
-  sendOTP = () => {
+  onChangeText = (text) => {
+    this.setState({
+      value: text,
+      data: ''
+    })  
+  }
+
+  sendOTP = async() => {
     if(!this.state.value){
       this.setState({ data: {response: "invalid_mobile"}, value: ''})
       return
@@ -33,19 +37,12 @@ class Login extends Component {
     let formData = new FormData();
     formData.append('mobile', this.state.value)
     formData.append('appname', app_config.schoolName)
-
-    fetch(APIs.GET_OTP, {
-      method: 'POST',
-      body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-      this.setState({isLoading: false, data})
-      if(data.response === 'success'){
-          Actions.OTP(this.state.value);
-      }
-    })
-    .catch(err => console.log(err))
+    const networkRequest = new NetworkRequest()
+    const data = await networkRequest.getOTP(formData)
+    this.setState({isLoading: false, data})
+    if(data.response === 'success'){
+      Actions.OTP(this.state.value);
+    }
   }
 
   render() {

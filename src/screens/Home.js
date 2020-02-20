@@ -17,7 +17,8 @@ import {FilterIcon, SortIcon, LogoutIcon, MenuIcon} from '../components/common/I
 import config from '../utils/config'
 import {getData} from '../utils/functions'
 import NetworkRequest from '../utils/NetworkRequest'
-import {deleteAllData} from '../db'
+import {deleteAllData, deleteUnusedData} from '../db'
+
 
 export default class Home extends React.Component{
 
@@ -32,14 +33,81 @@ export default class Home extends React.Component{
         students: [],
         selectedStudents: [],
         selectedStudentsApplied: [],
-        types: ["News", "Messages", "Events", "Announcement", "Homework", "Timetable"],
-        selectedTypes: ["News", "Messages", "Events", "Announcement", "Homework", "Timetable"],
-        selectedTypesApplied: ["News", "Messages", "Events", "Announcement", "Homework", "Timetable"]
+        types: ["News", "Message", "Events", "Announcement", "Homework", "Timetable"],
+        selectedTypes: ["News", "Message", "Event", "Announcement", "Homework", "Timetable"],
+        selectedTypesApplied: ["News", "Message", "Event", "Announcement", "Homework", "Timetable"]
     }
 
     constructor(props = null){
         super(props)
         this.firebase = new FirebaseConfig()
+    }
+
+    componentDidMount = async() => {
+
+        this._isMounted = true;
+        // get the cachedData & set the state
+        await this.getCachedData() 
+        this.handleSort()
+
+
+        /* Check if user logged in to other device, if yes, then logout from
+           current device & redirect to login screen.
+           Else, cache any pending contents  
+        */
+        // const data = this.checkIfUserLoggedInToOtherDevice()
+        // if(data.device_valid === 'no'){
+        //     await AsyncStorage.setItem('isUserLoggedIn', 'false')
+        //     await this.firebase.sendLocalNotification('You have signed in from another device.\nHence you are being logged out.');
+
+        //     await deleteAllData()    
+        //     Actions.auth()
+        //     return
+        // }
+
+        const status = await cachePayloadData()
+        this.updateState()
+        if(status === 'failure'){
+            await AsyncStorage.setItem('isUserLoggedIn', 'false')
+            await this.firebase.sendLocalNotification('You have signed in from another device.\nHence you are being logged out.');
+
+            await deleteAllData()    
+            Actions.auth()
+            return
+        }
+
+        this.unsubscribe = firebase.messaging().onMessage( async remoteMessage => {
+            const status = await cachePayloadData()
+            if(status === 'failure'){
+                await AsyncStorage.setItem('isUserLoggedIn', 'false')
+                await this.firebase.sendLocalNotification('You have been logged out.');
+                await deleteAllData()    
+                Actions.auth()
+                return;
+            }
+            else{
+                const JSONData = JSON.parse(remoteMessage.data.note)
+                const payload  = JSONData.non_interaction_attributes.display_attributes
+                await this.firebase.sendLocalNotification(payload.title);
+                this.updateState();
+            }
+        });
+        const mobile = await AsyncStorage.getItem('mobile')
+        this.unSubscribeFromTokenRefresh = this.firebase.onFirebaseTokenRefresh(mobile) 
+        
+        AppState.addEventListener('change', this.handleAppStateChange)
+
+        const statusDelete = await deleteUnusedData()
+        console.log(statusDelete)
+        
+    }
+
+    componentWillUnmount(){
+        this._isMounted = false;
+        AppState.removeEventListener('change', this.handleAppStateChange)
+        this.unsubscribe();
+        this.unSubscribeFromTokenRefresh()
+        console.log("Unsubscribed")
     }
 
     getCachedData = async() => {
@@ -78,61 +146,18 @@ export default class Home extends React.Component{
         return data 
     }
 
-
-    componentDidMount = async() => {
-        /* Check if user logged in to other device, if yes, then logout from
-           current device & redirect to login screen.
-           Else, cache any pending contents  
-        */
-        const data = this.checkIfUserLoggedInToOtherDevice()
-        if(data.device_valid === 'no'){
-            await AsyncStorage.setItem('isUserLoggedIn', 'false')
-            await AsyncStorage.setItem('cachedData', 
-            JSON.stringify({students:[], events:[]}))
-            await this.firebase.sendLocalNotification('You have signed in from another device.\nHence you are being logged out.');
-
-            await deleteAllData()    
-            Actions.auth()
-            return
-        }
-
-        // const status = await cachePayloadData()
-        // if(status === 'failure'){
-        //     await AsyncStorage.setItem('isUserLoggedIn', 'false')
-        //     await this.firebase.sendLocalNotification('You have signed in from another device.\nHence you are being logged out.');
-        //     Actions.auth()
-        //     return
-        // }
-
-        this.unsubscribe = firebase.messaging().onMessage( async remoteMessage => {
-            const status = await cachePayloadData()
-            if(status === 'failure'){
-                await AsyncStorage.setItem('isUserLoggedIn', 'false')
-                await this.firebase.sendLocalNotification('You have been logged out.');
-                Actions.auth()
-                return;
-            }
-            else{
-                const JSONData = JSON.parse(remoteMessage.data.note)
-                const payload  = JSONData.non_interaction_attributes.display_attributes
-                await this.firebase.sendLocalNotification(payload.title);
-                this.updateState();
-            }
-        });
-        const mobile = await AsyncStorage.getItem('mobile')
-        this.firebase.onFirebaseTokenRefresh(mobile) 
-        
-        AppState.addEventListener('change', this.handleAppStateChange)
-        
-        // get the cachedData & set the state
-        await this.getCachedData() 
-        this.handleSort()
-    }
-
     handleAppStateChange = async(nextAppState) => {
         if(this.state.appState.match(/inactive|background/) && nextAppState === 'active'){
             console.log("App has come to foreground")
-            //await cachePayloadData()
+            const status = await cachePayloadData()
+            if(status === 'failure'){
+                await AsyncStorage.setItem('isUserLoggedIn', 'false')
+                await this.firebase.sendLocalNotification('You have signed in from another device.\nHence you are being logged out.');
+
+                await deleteAllData()    
+                Actions.auth()
+                return
+            }
             this.updateState()
         }
         this.setState({
@@ -140,18 +165,8 @@ export default class Home extends React.Component{
         })
     }
 
-    componentWillUnmount(){
-        AppState.removeEventListener('change', this.handleAppStateChange)
-        this.unsubscribe();
-        console.log("Unsubscribed")
-    }
-
     closeDrawer = () => { this._drawer._root.close() }
     openDrawer  = () => { this._drawer._root.open()  } 
-    
-    filterList = () => {
-      
-    }
     
     sortListNewToOld = () => { 
         this.setState({
@@ -255,10 +270,8 @@ export default class Home extends React.Component{
                     text: 'Yes',
                     onPress: async()=>{
                         await AsyncStorage.setItem('isUserLoggedIn', 'false')
-                        await AsyncStorage.setItem('cachedData', 
-                            JSON.stringify({students:[], events:[]}))
-                        
-                        await deleteAllData()    
+                        const data = await deleteAllData()  
+                        console.log(data)
                         Actions.auth()
                     },
                     style: 'ok'
@@ -268,19 +281,21 @@ export default class Home extends React.Component{
     }
 
     render(){
-        console.log("Home Screen Rerender ...", this.state.events)
+        console.log("Home Screen Rerender ...")
         const filteredEvents = 
             this.state.events
-                .filter(event =>        
-                    this.state.selectedTypesApplied.indexOf(event.type) != -1)
+                .filter(event =>{
+                    console.log(event.type.charAt(0).toUpperCase() + event.type.slice(1))
+                    return this.state.selectedTypesApplied.indexOf(event.type.charAt(0).toUpperCase() + event.type.slice(1)) != -1
+                })
                 .filter(event => 
                     this.state.selectedStudentsApplied.indexOf(this.getStudentName(event.studentId))!=-1
                     || event.studentId === '' 
-                )                       
-        console.log("Events: ", this.state.events)
+                )  
+
+        console.log("Events: ", this.state.events)                     
         console.log("Filtered Events: ", filteredEvents)
-        // console.log("Selected Students: ", this.state.selectedStudentsApplied)
-        
+
         const header = 
             <Header 
                 style={styles.header}           
@@ -504,7 +519,7 @@ export default class Home extends React.Component{
                 <Drawer 
                     ref = { (ref) => { this._drawer = ref } } 
                     content = { 
-                        <SideBar navigator={this._navigator}/>
+                        <SideBar navigator={this._navigator} />
                     }
                     onClose = { () => this.closeDrawer() } > 
                     <Container> 
@@ -537,7 +552,6 @@ const styles = StyleSheet.create({
         color: 'white',
     },
     content:{
-        // width:'95%',
         paddingLeft: '2.5%',
         paddingRight: '2.5%',
         marginTop: 10,
@@ -559,7 +573,6 @@ const styles = StyleSheet.create({
         height: 'auto',
         marginLeft: '5%',
         alignItems: 'center',
-        // paddingTop: 10,
         borderRadius: 5
     },
     modalContent2:{
@@ -567,7 +580,6 @@ const styles = StyleSheet.create({
         width: '90%',
         height: 'auto',
         marginLeft: '5%',
-        // paddingTop: 10,
         borderRadius: 5
     },
     center: {

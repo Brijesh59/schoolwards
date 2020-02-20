@@ -14,14 +14,14 @@ export default class App extends Component{
   }
   
   componentDidMount = async() => {
+    this._isMounted = true;
     this.firebase.checkPermission();
     // this.unsubscribe = this.firebase.createForegroundNotificationListeners();
-    const isUserLogged = await AsyncStorage.getItem('isUserLoggedIn')
-    console.log("IsUserLoggedIn: ", isUserLogged)
   }
 
   componentWillUnmount() {
     // this.unsubscribe()
+    this._isMounted = false;
   }
 
   render(){

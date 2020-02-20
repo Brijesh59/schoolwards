@@ -10,6 +10,7 @@ import {addStudentsAndEventsUponLogin}     from '../utils/functions'
 import CustomButton   from '../components/common/CustomButton'
 import Input          from '../components/common/Input'
 import NetworkRequest from '../utils/NetworkRequest';
+import {deleteAllData} from '../db'
 
 
 const VerifyOTP = (props) => {
@@ -32,23 +33,20 @@ const VerifyOTP = (props) => {
     const fifthDigitRef  = useRef(null);
     const sixthDigitRef  = useRef(null);
 
-    async function getToken(){
-        let fcmToken = null
-        try {
-            fcmToken = await AsyncStorage.getItem('fcmToken')
+    useEffect(() => {
+        async function getToken(){
+            const fcmToken = await AsyncStorage.getItem('fcmToken')
             setFcmToken(fcmToken)
-        } 
-        catch (error) {
-            console.log('Error in fetching fcmToken')  
+           
         }
-    }
+        getToken()
+        firstDigitRef.current.focus()
+       
+    }, [])
 
     useEffect(() => {
-        getToken()
         console.log("FCMToken: ", fcmToken)
-        setFcmToken(fcmToken)
-        firstDigitRef.current.focus();
-    }, [])
+    }, [fcmToken])
 
     useEffect(() => {
         setFocus('secondDigit')
@@ -72,7 +70,6 @@ const VerifyOTP = (props) => {
 
     const loginToDashboard = async() => {
         setIsLoding(true)
-        // verify OTP, then redirect to dashboard.
         const OTP = firstDigit + secondDigit + thirdDigit + fourthDigit + fifthDigit + sixthDigit
         
         let formData = new FormData();
@@ -88,16 +85,20 @@ const VerifyOTP = (props) => {
         setIsLoding(false)
         if(data.response === 'success'){
             console.log('Login Success.') 
-            await setUserLoggedInAndCacheData(data.students, data.common_events)
+            await AsyncStorage.setItem('isUserLoggedIn', 'true')
             await AsyncStorage.setItem('mobile', mobileNo)
-
-            // update device id on server
+            const isSaved = await addStudentsAndEventsUponLogin(data.students, data.common_events)
+            if(!isSaved){
+                setShowErrorMessage('Something went wrong!\nPlease try again ...')
+                return 
+            }
+            
+            // if data is saved, update fcmToken(deviceId) on server
             let formData = new FormData();
             formData.append('mobile_no', mobileNo)
             formData.append('device_id', fcmToken)
             formData.append('appname', app_config.schoolName)
             const response = await networkRequest.updateFCMToken(formData)
-            console.log("Update FCM Token Resonse: ", response.status)
             if(response.status === 'success')
                 Actions.dashboard()
             else
@@ -108,11 +109,6 @@ const VerifyOTP = (props) => {
             setShowErrorMessage(data)  
         }
     } 
-
-    const setUserLoggedInAndCacheData = async (students, commonEvents) => {
-        await AsyncStorage.setItem('isUserLoggedIn', 'true')
-        await addStudentsAndEventsUponLogin(students, commonEvents)
-    }
 
     const setFocus = (focusEle) => {
         switch(focusEle){
