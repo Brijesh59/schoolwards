@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { View, Text, TextInput, StyleSheet } from 'react-native'
+import { View, Text, TextInput, StyleSheet, Keyboard } from 'react-native'
 import ActivityLoader from '../components/common/ActivityLoader'
 import { Actions } from 'react-native-router-flux'
 import CustomButton from '../components/common/CustomButton'
@@ -29,6 +29,7 @@ class Login extends Component {
   }
 
   sendOTP = async() => {
+    Keyboard.dismiss()
     if(!this.state.value){
       this.setState({ data: {response: "invalid_mobile"}, value: ''})
       return

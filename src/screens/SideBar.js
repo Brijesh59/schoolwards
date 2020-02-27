@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import {StyleSheet, View, Platform} from 'react-native'
 import { Text, Container, Content, Left, List, ListItem, Thumbnail} from 'native-base'
 import { Actions } from 'react-native-router-flux';
@@ -9,27 +9,33 @@ import {getStudentsList} from '../utils/functions';
 
 const schoolLogo = '../assets/schoolLogo.png'
 
-export default function SideBar() {
-    const [students, setStudents] = useState([])
-
-    useEffect(() => {
-        async function getData(){
-          const data = await getStudentsList()
-          setStudents(data)
+export default class SideBar extends React.PureComponent{
+  
+    constructor(props){
+        super(props)
+        this.state = {
+            students: []
         }
-        getData()
-    }, [])
+    }
 
-    console.log('Sidebar Screen Re-rendered ...')
-    return (
-        <Container style={[styles.container]}>
-           <View style={[{alignItems:'center'}, 
-            Platform.OS==='ios' && {marginTop:25}]}>
-                <Thumbnail 
-                    large
-                    style={styles.schoolLogo} 
-                    source={require(schoolLogo)} />
-           </View>
+    componentDidMount = async() => {  
+      const students = await getStudentsList()
+      this.setState({students})
+    }
+
+    render(){
+        console.log('Sidebar Screen Re-rendered ...')
+        const students = this.state.students 
+        return (
+            <Container style={[styles.container]}>
+                <View 
+                    style={[{alignItems:'center'}, 
+                            Platform.OS==='ios' && {marginTop:25}]}>
+                    <Thumbnail 
+                        large
+                        style={styles.schoolLogo} 
+                        source={require(schoolLogo)} />
+                </View>
                 <Content>
                     <List>
                         <ListItem header style={styles.listHeader}> 
@@ -50,7 +56,7 @@ export default function SideBar() {
                                             source={{uri: student.profile ? student.profile : defaultImage}} />
                                     </Left>
                                     <Text style={styles.listItemTitle}>
-                                        {student.name}
+                                        {student.firstName}
                                     </Text>
                                 </ListItem>
                             }
@@ -94,9 +100,11 @@ export default function SideBar() {
                         </ListItem>
                     </List>
                 </Content>
-        </Container>
-    )
+            </Container>
+        )
+    } 
 }
+
 
 const styles = StyleSheet.create({
     container: {

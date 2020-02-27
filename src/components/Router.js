@@ -71,19 +71,20 @@ class RouterComponent extends React.Component {
 
                         <Scene 
                             key="auth" 
-                            hideNavBar>
+                            hideNavBar
+                            gesturesEnabled={false}>
                             <Scene 
                                 key="login" 
                                 component={Login} />
                         </Scene>
                         <Scene 
                             key="OTP" 
-                            hideNavBar>                             
+                            hideNavBar
+                            gesturesEnabled={false}>                             
                             <Scene 
                                 key="verifyOTP" 
                                 component={VerifyOTP} />
                         </Scene>
-    
                         <Scene 
                             gesturesEnabled={false}
                             key="dashboard" 

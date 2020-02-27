@@ -18,12 +18,13 @@ import config from '../utils/config'
 import {getData} from '../utils/functions'
 import NetworkRequest from '../utils/NetworkRequest'
 import {deleteAllData, deleteUnusedData} from '../db'
-
+import DataLoader from '../components/common/DataLoder'
 
 export default class Home extends React.Component{
 
     state = {
         appState: AppState.currentState,
+        pendingDataLoaded: false,
         showToast: false,
         showFilterModal: false,
         showSortModal: false,
@@ -33,7 +34,7 @@ export default class Home extends React.Component{
         students: [],
         selectedStudents: [],
         selectedStudentsApplied: [],
-        types: ["News", "Message", "Events", "Announcement", "Homework", "Timetable"],
+        types: ["News", "Message", "Event", "Announcement", "Homework", "Timetable"],
         selectedTypes: ["News", "Message", "Event", "Announcement", "Homework", "Timetable"],
         selectedTypesApplied: ["News", "Message", "Event", "Announcement", "Homework", "Timetable"]
     }
@@ -44,8 +45,7 @@ export default class Home extends React.Component{
     }
 
     componentDidMount = async() => {
-
-        this._isMounted = true;
+        console.log('Home Component Mounted ...')
         // get the cachedData & set the state
         await this.getCachedData() 
         this.handleSort()
@@ -55,32 +55,25 @@ export default class Home extends React.Component{
            current device & redirect to login screen.
            Else, cache any pending contents  
         */
-        // const data = this.checkIfUserLoggedInToOtherDevice()
-        // if(data.device_valid === 'no'){
-        //     await AsyncStorage.setItem('isUserLoggedIn', 'false')
-        //     await this.firebase.sendLocalNotification('You have signed in from another device.\nHence you are being logged out.');
-
-        //     await deleteAllData()    
-        //     Actions.auth()
-        //     return
-        // }
-
         const status = await cachePayloadData()
-        this.updateState()
         if(status === 'failure'){
             await AsyncStorage.setItem('isUserLoggedIn', 'false')
             await this.firebase.sendLocalNotification('You have signed in from another device.\nHence you are being logged out.');
-
-            await deleteAllData()    
+            await deleteAllData() // delete all cached data
             Actions.auth()
             return
         }
+        else{
+            this.updateState()
+        }
 
         this.unsubscribe = firebase.messaging().onMessage( async remoteMessage => {
+            // this.setState({pendingDataLoaded: false})
+            console.log('Foreground Notification...')
             const status = await cachePayloadData()
             if(status === 'failure'){
                 await AsyncStorage.setItem('isUserLoggedIn', 'false')
-                await this.firebase.sendLocalNotification('You have been logged out.');
+                await this.firebase.sendLocalNotification('You have signed in from another device.\nHence you are being logged out.');
                 await deleteAllData()    
                 Actions.auth()
                 return;
@@ -88,10 +81,11 @@ export default class Home extends React.Component{
             else{
                 const JSONData = JSON.parse(remoteMessage.data.note)
                 const payload  = JSONData.non_interaction_attributes.display_attributes
+                await this.updateState();
                 await this.firebase.sendLocalNotification(payload.title);
-                this.updateState();
             }
         });
+
         const mobile = await AsyncStorage.getItem('mobile')
         this.unSubscribeFromTokenRefresh = this.firebase.onFirebaseTokenRefresh(mobile) 
         
@@ -99,15 +93,12 @@ export default class Home extends React.Component{
 
         const statusDelete = await deleteUnusedData()
         console.log(statusDelete)
-        
     }
 
     componentWillUnmount(){
-        this._isMounted = false;
         AppState.removeEventListener('change', this.handleAppStateChange)
-        this.unsubscribe();
-        this.unSubscribeFromTokenRefresh()
-        console.log("Unsubscribed")
+        this.unsubscribe && this.unsubscribe();
+        this.unSubscribeFromTokenRefresh && this.unSubscribeFromTokenRefresh()
     }
 
     getCachedData = async() => {
@@ -130,7 +121,7 @@ export default class Home extends React.Component{
     updateState = async() => {
         console.log("Updating the Home state ...")
         const JSONDATA = await getData()
-        this.setState({events: JSONDATA.events, students: JSONDATA.students})
+        this.setState({events: JSONDATA.events, students: JSONDATA.students, pendingDataLoaded: true})
         this.handleSort()
     }
 
@@ -149,6 +140,7 @@ export default class Home extends React.Component{
     handleAppStateChange = async(nextAppState) => {
         if(this.state.appState.match(/inactive|background/) && nextAppState === 'active'){
             console.log("App has come to foreground")
+            this.setState({pendingDataLoaded: false})
             const status = await cachePayloadData()
             if(status === 'failure'){
                 await AsyncStorage.setItem('isUserLoggedIn', 'false')
@@ -285,7 +277,6 @@ export default class Home extends React.Component{
         const filteredEvents = 
             this.state.events
                 .filter(event =>{
-                    console.log(event.type.charAt(0).toUpperCase() + event.type.slice(1))
                     return this.state.selectedTypesApplied.indexOf(event.type.charAt(0).toUpperCase() + event.type.slice(1)) != -1
                 })
                 .filter(event => 
@@ -293,8 +284,8 @@ export default class Home extends React.Component{
                     || event.studentId === '' 
                 )  
 
-        console.log("Events: ", this.state.events)                     
-        console.log("Filtered Events: ", filteredEvents)
+        // console.log("Events: ", this.state.events)                     
+        // console.log("Filtered Events: ", filteredEvents)
 
         const header = 
             <Header 
@@ -326,33 +317,41 @@ export default class Home extends React.Component{
                 </Right>
             </Header>
 
-        const mainContent = this.state.events && 
+        const mainContent = this.state.events.length > 0 && 
             <FlatList 
                 data={filteredEvents}
                 renderItem={
-                    card => (
+                    ({item: event}) => (
                         <TouchableOpacity
+                            activeOpacity={0.7}
                             style={{width: '100%'}}
                             onPress={() => 
                                 Actions.detailsScreen({
-                                    details: card.item,
+                                    details: event,
                                     updateHomeState: this.updateState,
                                 })
                             }
                             >
                             <CustomCard 
-                                id={card.item.id}
-                                title={card.item.title}
-                                type={card.item.type}
-                                description={card.item.description}
-                                venue={card.item.venue}
-                                to={card.item.to}
-                                studentName={this.getStudentName(card.item.studentId)}
-                                dateTime={card.item.dateTime}
-                                createdOn={card.item.createdOn}
-                                attatchment={card.item.attatchment}
-                                attatchmentExtention={card.item.attatchmentExtention}
+                                id={event.id}
+                                title={event.title}
+                                type={event.type}
+                                description={event.description}
+                                venue={event.venue}
+                                to={event.to}
+                                studentName={this.getStudentName(event.studentId)}
+                                dateTime={event.dateTime}
+                                createdOn={event.createdOn}
+                                attatchment={event.attatchment}
+                                attatchmentExtention={event.attatchmentExtention}
                                 updateHomeState={()=>this.updateState()}
+                                interactionAttributes={[
+                                    event.interactionTypeYes,
+                                    event.interactionTypeMaybe,
+                                    event.interactionTypeNo
+                                ]}
+                                interactionSubmitUrl={event.interactionSubmitUrl}
+                                interactionResponse={event.interactionResponse}
                             />
                         </TouchableOpacity>
                     )
@@ -447,20 +446,25 @@ export default class Home extends React.Component{
                         <View >
                             {
                                 this.state.students.map(student=> (
-                                    <View style={{
+                                    <TouchableOpacity style={{
                                         width: '80%',
                                         marginLeft: 15,
                                         flexDirection: 'row',
                                         justifyContent: 'space-between',
                                         padding: 5
                                     }}
-                                    key={student.firstName}>
-                                        <Text style={{color: '#707070', fontSize:16}}>{student.firstName}</Text>
+                                    activeOpacity={0.6}
+                                    key={student.firstName}
+                                    onPress={()=> this.handleFilterStudentCheckBox(student.firstName)}>
+                                        <Text 
+                                            style={{color: '#707070', fontSize:16}}
+                                            
+                                            >{student.firstName}</Text>
                                         <CheckBox 
                                             checked={this.state.selectedStudents.indexOf(student.firstName)!=-1 ? true : false}
                                             onPress={()=> this.handleFilterStudentCheckBox(student.firstName)}
                                             />
-                                    </View> 
+                                    </TouchableOpacity>
                                 ))
                             }
                         </View>
@@ -472,19 +476,21 @@ export default class Home extends React.Component{
                         <View >
                             {
                                 this.state.types.map((type=> (
-                                    <View style={{
+                                    <TouchableOpacity style={{
                                         width: '80%',
                                         marginLeft: 15,
                                         flexDirection: 'row',
                                         justifyContent: 'space-between',
                                         padding: 5
                                     }}
+                                    activeOpacity={0.6}
+                                    onPress={()=>this.handleFilterTypeCheckBox(type)}
                                     key={type}>
                                         <Text style={{color: '#707070', fontSize:16}}>{type}</Text>
                                         <CheckBox 
                                             checked={this.state.selectedTypes.indexOf(type)!=-1 ? true : false}
                                             onPress={()=>this.handleFilterTypeCheckBox(type)} />
-                                    </View>    
+                                    </TouchableOpacity>    
                                 )))
                             }
                         </View>
@@ -525,6 +531,7 @@ export default class Home extends React.Component{
                     <Container> 
                         {header}
                         <View style={styles.content}>
+                            {!this.state.pendingDataLoaded && <DataLoader />}
                             { this.state.events.length > 0 ?
                                 mainContent :
                                 <ActivityLoader />

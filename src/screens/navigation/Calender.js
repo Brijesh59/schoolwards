@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import {StyleSheet, View, ScrollView, Dimensions} from 'react-native'
+import {StyleSheet, View, Dimensions} from 'react-native'
 import { Container, Content, Button, Body, Text, Card, CardItem} from 'native-base'
 import {Calendar} from 'react-native-calendars'
+import Carousel, { Pagination } from 'react-native-snap-carousel';
 import CustomHeader from '../../components/common/CustomHeader'
 import {formatDate, getCurrentDate, getData} from '../../utils/functions'
 import config from '../../utils/config'
@@ -13,6 +14,7 @@ export default function CalenderScreen() {
     const [selectedStudent, setSelectedStudent] = useState(0)
     const [selectedDate, setSelectedDate] = useState(getCurrentDate())
     const [markedDates, setMarkedDates] = useState({})
+    const [activeSlide, setActiveSlide] = useState(0)
     const screenWidth = Dimensions.get('window').width
     const optimumLayoutWidth = screenWidth - screenWidth/10
     
@@ -27,15 +29,17 @@ export default function CalenderScreen() {
 
     useEffect(() => {
         handleMarkedDate()
+        students.length > 0 && filterEvents()
     }, [students, events])
-
 
     useEffect(() => {
         handleMarkedDate()
+        students.length > 0 && filterEvents()
     }, [selectedStudent])
 
     useEffect(() => {
         handleMarkedDate()
+        students.length > 0 && filterEvents()
     }, [selectedDate])
 
     function filterEventsForStudentChange(selectedStudent){
@@ -52,19 +56,28 @@ export default function CalenderScreen() {
         const filteredEvents = events.filter(e => e.dateTime && e.dateTime.split(' ')[0] === selectedDate)
         setFilteredEvents(filteredEvents)
     }
+    function filterEvents(){
+        const filteredEvents = 
+        events
+            .filter(e => e.dateTime && e.dateTime.split(' ')[0] === selectedDate)
+            .filter(e => {
+                if(!e.studentName)
+                    return e
+                else
+                    return e.studentName.split(' ')[0] === students[selectedStudent].firstName
+            })
+        setFilteredEvents(filteredEvents)
+    }
 
     function handleStudentChange(student, index){
         setSelectedStudent(index)
-        filterEventsForStudentChange(student.firstName)
     }
 
     function handleDateChange(selectedDate){
         setSelectedDate(selectedDate)
-        filterEventsForDateChange(selectedDate)
     }
 
     function handleMarkedDate(){
-        console.log("Set MarkedDate Called, ", events)
         let tempMarkedDates = {}
         tempMarkedDates[selectedDate] = { selected: true }
         events.forEach(event => {
@@ -81,10 +94,42 @@ export default function CalenderScreen() {
                 }
             }
         })
-        console.log("Marked Dates, ", tempMarkedDates)
+        // console.log("Marked Dates, ", tempMarkedDates)
         setMarkedDates(tempMarkedDates)
     }
     
+    function renderEvents({item:event, index}){
+        // console.log("Passed Events: ", event)
+        return <Card style={{
+                        width: optimumLayoutWidth-6,
+                        shadowOffset:{
+                            width: 0,
+                            height: 0
+                        },
+                        shadowOpacity: 0
+                    }}
+                    key={index}> 
+                    <CardItem 
+                        header 
+                        bordered 
+                        button 
+                        style={{width: optimumLayoutWidth-6.8}}>
+                        <Text
+                        style={{color: config.primaryColor}}>
+                            Event on {formatDate(selectedDate)} 
+                        </Text>
+                    </CardItem>
+                    <CardItem>
+                        <Body  
+                            style={{width: optimumLayoutWidth-10, flexWrap: 'wrap' }}>
+                            <Text>
+                                {event.title}
+                            </Text>
+                        </Body>
+                    </CardItem>
+                </Card>
+    }
+
     const studentsList = students.map((student, index) => 
         <Button 
             key = {student.firstName}
@@ -134,54 +179,43 @@ export default function CalenderScreen() {
                         }}
                     /> 
                 </View>       
-                   
-                <View style={{ width: optimumLayoutWidth, marginTop: 10}}> 
-                    <ScrollView 
-                        horizontal={true} 
-                        showsHorizontalScrollIndicator={false} 
-                        pagingEnabled={true}
-                        decelerationRate={10}
-                        snapToInterval={100-60}
-                        snapToAlignment={'center'}
-                        > 
-                        {
-                            filteredEvents.length > 0 ?
-                            filteredEvents.map((event, index)=>(
-                                <Card 
-                                    style={{
-                                        width: optimumLayoutWidth-6,
-                                        shadowOffset:{
-                                            width: 0,
-                                            height: 0
-                                        },
-                                        shadowOpacity: 0
-                                    }}
-                                    key={index}> 
-                                    <CardItem 
-                                        header 
-                                        bordered 
-                                        button 
-                                        style={{width: optimumLayoutWidth-6.8}}>
-                                        <Text
-                                        style={{color: config.primaryColor}}>
-                                            Event on {formatDate(selectedDate)} 
-                                        </Text>
-                                    </CardItem>
-                                    <CardItem>
-                                        <Body  
-                                            style={{width: optimumLayoutWidth-10, flexWrap: 'wrap' }}>
-                                            <Text>
-                                                {event.title}
-                                            </Text>
-                                        </Body>
-                                    </CardItem>
-                                </Card>
-                            ))
-                            :
-                            <Text>There is no Event on {formatDate(selectedDate)} </Text>
-                        }
-                    </ScrollView>
+             
+                {   
+                    filteredEvents.length === 0 && 
+                    <Text style={{marginTop: 20}}>
+                        There is no Event on {formatDate(selectedDate)}
+                    </Text> 
+                }
+                <View style={{ height:110}}>
+                    <Carousel 
+                        data={filteredEvents}
+                        renderItem={(event, index) => renderEvents(event, index)}
+                        onSnapToItem={index => setActiveSlide(index)}
+                        sliderWidth={optimumLayoutWidth}
+                        itemWidth={optimumLayoutWidth}
+                    />
                 </View>
+                <View>
+                    <Pagination
+                        dotsLength={filteredEvents.length}
+                        activeDotIndex={activeSlide}
+                        dotColor={config.secondaryColor}
+                        inactiveDotColor={config.secondaryColor}
+                        inactiveDotOpacity={0.4}
+                        dotStyle={{
+                            width: 15,
+                            height: 15,
+                            borderRadius: 10,
+                        }}
+                        inactiveDotStyle={{
+                            width: 15,
+                            height: 15,
+                            borderRadius: 10,
+                        }}
+                        inactiveDotScale={0.8}
+                    />
+                </View>
+               
             </Content>
         </Container>
     )
@@ -189,10 +223,11 @@ export default function CalenderScreen() {
 
 const styles = StyleSheet.create({
     container: {
+        height: '100%',
         alignItems: 'center',
     },
     studentsSection: {
-        flex:1,
+        // flex:1,
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'center',

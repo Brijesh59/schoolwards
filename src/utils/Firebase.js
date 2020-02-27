@@ -17,7 +17,7 @@ export default class FirebaseConfig{
     if (enabled) {
       this.getToken();
     } else {
-      console.log('User not reqistered for FCM. Requesting Permission ...');
+      console.log('User not reqistered for FCM. Requesting Permission ...', enabled.toString());
       this.requestPermission();
     }
   }
@@ -108,6 +108,7 @@ export default class FirebaseConfig{
       })
     }
     else{
+      console.log('Notification Recieved ...')
       PushNotificationIOS.presentLocalNotification({
         alertTitle: payload,
         isSilent: notification[1]==='true' ? true : false

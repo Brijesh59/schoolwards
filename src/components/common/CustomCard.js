@@ -1,18 +1,32 @@
-import React, { useState } from 'react'
-import { View, StyleSheet, Image, Alert } from 'react-native'
+import React, { useState, useEffect } from 'react'
+import { View, StyleSheet, Alert } from 'react-native'
 import { Card, CardItem, Left, Text, Right, Body, Button, Icon } from 'native-base'
+import ViewMoreText from 'react-native-view-more-text'
 import {AnnouncementIcon, CalendarIcon, HomeworkIcon, MessageIcon, NewsIcon, TimetableIcon, ContactIcon, ContactsIcon, TagIcon} from './Icons'
 import { cacheFile, updateEventAttatchment } from '../../utils/functions'
-import AsyncStorage from '@react-native-community/async-storage'
 import FileViewer from 'react-native-file-viewer';
 import ActivityLoader from './ActivityLoader'
-import {formatDateTime} from '../../utils/functions'
+import {formatDateTime, postInteractionDetails, updateEventInteractionResponse} from '../../utils/functions'
 import config from '../../utils/config'
+import {getEventById} from '../../db'
 
-export default function CustomCard({id, title, type, description, to, studentName, createdOn, onCardPressed, attatchment, attatchmentExtention, updateHomeState}) {
+export default function CustomCard({id, title, type, description, to, studentName, createdOn, onCardPressed, attatchment, attatchmentExtention, updateHomeState, interactionAttributes, interactionSubmitUrl, interactionResponse}) {
 
     const [isAttatchDownloadSuccess, setIsAttatchDownloadSuccess] = useState(false)
     const [downloading, setDownloading] = useState(false)
+    const [updateInteractionResponse, setUpdateInteractionResponse] = useState(false)
+    const [selectedInteraction, setSelectedInteraction] = useState(null)
+    const [interactionData, setInteractionData] = useState([])
+  
+    useEffect( () => {
+        if(interactionAttributes[0]){
+            const [interactionTypeYes, interactionTypeMaybe, interactionTypeNo] = interactionAttributes
+            const dataYes   = JSON.parse(interactionTypeYes)
+            const dataMaybe = JSON.parse(interactionTypeMaybe)
+            const dataNo    = JSON.parse(interactionTypeNo)
+            setInteractionData([dataYes, dataMaybe, dataNo]) 
+        }
+    }, [])
 
     const getIcon = (iconType) => {
         switch(iconType.toLowerCase()){
@@ -33,7 +47,6 @@ export default function CustomCard({id, title, type, description, to, studentNam
         }
     }
     
-
     const handleAttatchmentOpen = () => {
         console.log('Open')
         FileViewer.open(attatchment)
@@ -56,20 +69,34 @@ export default function CustomCard({id, title, type, description, to, studentNam
         }
     }
 
-    const updateAttatchmentPathLocally = async (filePath) => {
-        const cachedData = await AsyncStorage.getItem('cachedData')
-        const JSONData = JSON.parse(cachedData)
-        const events = JSONData.events
-        events.forEach(event => {
-            if(event.title === title && event.description === description){
-                event.attatchment = filePath
-            }
-        })
-        const dataToSave = {
-            students: [...JSONData.students],
-            events: events
+    const handleInteraction = async(interactionDetails) => {
+        const details = {
+            type: interactionDetails.non_display_attributes.pull_attributes.type,
+            eventId: interactionDetails.non_display_attributes.pull_attributes.id, 
+            student_id: interactionDetails.non_display_attributes.pull_attributes.student_id,
+            tag_name: interactionDetails.non_display_attributes.tag_name
         }
-        await AsyncStorage.setItem('cachedData', JSON.stringify(dataToSave))
+        console.log(details)
+        setUpdateInteractionResponse(true)
+        setSelectedInteraction(details.tag_name)
+       
+        const data = await postInteractionDetails(details, interactionSubmitUrl)
+        console.log('Data from postInteractionDetails: ', data)
+        const updatedEvent = await updateEventInteractionResponse(details.eventId, details.tag_name)
+        // getEventById(details.eventId)
+        //     .then(data => console.log("GET:/", data))
+        //     .catch(error => console.log("ERR:/", error))
+        setUpdateInteractionResponse(false)
+        setSelectedInteraction(null)
+        if(updatedEvent.interactionResponse === details.tag_name){
+           console.log('Updated sucessfully')
+           await updateHomeState()
+        }
+        else{
+            console.log('Something went worng. Please try again')
+            Alert.alert('Something went worng. Please try again.')
+        }
+
     }
 
     const openAttatchment = 
@@ -97,6 +124,35 @@ export default function CustomCard({id, title, type, description, to, studentNam
             } 
         </Button>
 
+    const interactionButtons = interactionAttributes[0] ? interactionData.map((data, index) => 
+        <Button 
+            key = {index}
+            bordered
+            light 
+            disabled={updateInteractionResponse}
+            style = {
+                data.non_display_attributes.tag_name === interactionResponse?
+                styles.selectedInteraction :
+                styles.unSelectedInteraction
+            }
+            onPress={()=>handleInteraction(data)}>
+                <>
+                    <Text 
+                        style = {
+                            data.non_display_attributes.tag_name === interactionResponse?
+                            styles.selectedInteractionText :
+                            styles.unSelectedInteractionText
+                        }>
+                        { data.display_attributes.interaction_name }
+                    </Text>
+                    {   updateInteractionResponse && 
+                        selectedInteraction === data.non_display_attributes.tag_name && 
+                        <ActivityLoader style={{position: 'absolute'}}/>
+                    }
+                </>
+        </Button>
+    ) : null
+
     return (
         <View>
             <Card style={styles.container} >
@@ -112,9 +168,15 @@ export default function CustomCard({id, title, type, description, to, studentNam
                 </CardItem>
                 <CardItem onPress={()=>onCardPressed()}>
                     <Body>
+                    <ViewMoreText
+                        numberOfLines={2}
+                        renderViewMore={ onPress => <></> }
+                        renderViewLess={ onPress => <></> }
+                        >
                         <Text style={styles.description}>          
                             {description}
                         </Text>
+                    </ViewMoreText>
                     </Body>
                 </CardItem>
                 <CardItem>
@@ -127,6 +189,11 @@ export default function CustomCard({id, title, type, description, to, studentNam
                             )
                         }
                     </Left>
+                </CardItem>
+                <CardItem>
+                    <View style = { styles.interactionSection }>
+                        { interactionButtons }
+                    </View>
                 </CardItem>
                 <CardItem>
                     <Left>
@@ -159,18 +226,45 @@ const styles = StyleSheet.create({
       flex: 1,  
         justifyContent: 'center',
         alignItems: 'center',
-        },
-        title: { 
-            color: '#363636',
-            fontWeight: '600'
-        },
-        description:{
-            color: '#707070', 
-        },
-        normal: {
-            color: config.primaryColor, 
-            fontWeight: '400',
-            fontSize: 14,
-            width: '100%'
-        },
+    },
+    title: { 
+        color: '#363636',
+        fontWeight: '600'
+    },
+    description:{
+        color: '#707070', 
+    },
+    normal: {
+        color: config.primaryColor, 
+        fontWeight: '400',
+        fontSize: 14,
+        width: '100%'
+    },
+    interactionSection: {
+        // flex:1,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-around',
+    },
+    selectedInteraction:{
+        backgroundColor: config.primaryColor,
+        color: 'white',
+        margin: 5,
+        maxWidth: 110,
+        minWidth: 90,
+        justifyContent: 'center'
+    },
+    unSelectedInteraction:{
+        backgroundColor: '#f2f2f2',
+        margin: 5,
+        maxWidth: 110,
+        minWidth: 90,
+        justifyContent: 'center'
+    },
+    selectedInteractionText:{
+        color: 'white',
+    },
+    unSelectedInteractionText:{
+        color: '#808080'
+    },
 });

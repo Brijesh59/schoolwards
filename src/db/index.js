@@ -121,9 +121,7 @@ export const getAllEvents = () => new Promise((resolve, reject) => {
     Realm.open(databaseOptions)
         .then(realm => {
             const data = realm.objects(EVENT_SCHEMA)
-            console.log('Data: ', data)
             const events = data.filtered(`isDeleted = false`)
-            console.log("Events: ", events)
             resolve(events)
         })
         .catch(error => reject(error))
@@ -136,8 +134,20 @@ export const updateEventAttatchmentUri = (eventId, attatchmentUri) => new Promis
             let eventToUpdate = realm.objectForPrimaryKey(EVENT_SCHEMA, eventId)
             eventToUpdate.attatchment = attatchmentUri
             resolve(eventToUpdate)
-        })
-        
+        }) 
+    })
+    .catch(error => reject(error))
+})
+
+export const updateEventInteraction = (eventId, interactionResponse) => new Promise((resolve, reject) => {
+    Realm.open(databaseOptions)
+    .then(realm => {
+        realm.write(()=>{
+            let eventToUpdate = realm.objectForPrimaryKey(EVENT_SCHEMA, eventId)
+            eventToUpdate.interactionResponse = interactionResponse
+            console.log('Updated value: ', realm.objectForPrimaryKey(EVENT_SCHEMA, eventId).interactionResponse)
+            resolve(eventToUpdate)
+        }) 
     })
     .catch(error => reject(error))
 })
@@ -154,7 +164,6 @@ export const deleteAllData = ()=> new Promise((resolve, reject) => {
             for(const key in allStudents){
                 allStudents[key].isDeleted = true
             }
-            console.log('isDeletedTrue: true')
         })
         resolve('All data deleted(isDeleted set to true)')
     })
@@ -176,3 +185,4 @@ export const deleteUnusedData = ()=> new Promise((resolve, reject) => {
     })
     .catch(error => reject(error))
 })
+

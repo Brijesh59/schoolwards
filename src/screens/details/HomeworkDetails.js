@@ -32,7 +32,8 @@ export default function HomeworkDetails(props) {
     
     const handleAttatchmentDownload = async() => {
         setDownloading(true)
-        const data = await cacheFile(details.attatchment, details.attatchmentExtention).then(d => d)
+        const data = await cacheFile(details.attatchment, details.attatchmentExtention)
+                            .then(d => d)
         if(data.isFileSaved){
             await updateEventAttatchment(details.id, data.filePath) 
             setIsAttatchDownloadSuccess(true)  

@@ -51,6 +51,11 @@ export const EventSchema = {
         isDeleted: {
             type: 'bool',
             default: false
-        }
+        },
+        interactionSubmitUrl: 'string?',
+        interactionTypeYes: 'string?',
+        interactionTypeNo: 'string?',
+        interactionTypeMaybe: 'string?',
+        interactionResponse: 'string?'
     }
 }

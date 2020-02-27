@@ -7,9 +7,12 @@ import {
 import config from '../../utils/config'
 
 export default class ActivityLoader extends Component {
+  constructor(props){
+    super(props)
+  }
   render() {
     return (
-      <View style={[styles.container, styles.horizontal]}>
+      <View style={[styles.container, styles.horizontal, this.props.style]}>
         <ActivityIndicator size="large" color={config.secondaryColor} />
       </View>
     )

@@ -90,5 +90,15 @@ export default class NetworkRequest{
             return error.message
         }
     }
+
+    async updateInteractionStatus(formData, url){
+        try{
+            const response = await axios.post(url, formData, this.options)
+            return response.data
+        }
+        catch(error){
+            return error.message
+        }
+    }
     
 }

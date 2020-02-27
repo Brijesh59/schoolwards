@@ -308,10 +308,10 @@ PODS:
     - React
   - RNDeviceInfo (5.4.1):
     - React
-  - RNFBApp (6.2.0):
+  - RNFBApp (6.3.4):
     - Firebase/Core (~> 6.13.0)
     - React
-  - RNFBMessaging (6.2.0):
+  - RNFBMessaging (6.3.4):
     - Firebase/Messaging (~> 6.13.0)
     - React
     - RNFBApp
@@ -331,6 +331,7 @@ DEPENDENCIES:
   - DoubleConversion (from `../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - FBReactNativeSpec (from `../node_modules/react-native/Libraries/FBReactNativeSpec`)
+  - Firebase/Messaging
   - Folly (from `../node_modules/react-native/third-party-podspecs/Folly.podspec`)
   - glog (from `../node_modules/react-native/third-party-podspecs/glog.podspec`)
   - RCTRequired (from `../node_modules/react-native/Libraries/RCTRequired`)
@@ -510,8 +511,8 @@ SPEC CHECKSUMS:
   RNCAsyncStorage: 8539fc80a0075fcc9c8e2dff84cd22dc5bf1dacf
   RNCPushNotificationIOS: 30ed75aa2981a4ee00b8a2c46599ff18a9c7fcf6
   RNDeviceInfo: 54556486cd02538dbef727f39292d096abe0cf0e
-  RNFBApp: 5b215aacc09105a1761de31b9a0eb2abcce06253
-  RNFBMessaging: be0b936394416ec5503add603f2c0a641c353063
+  RNFBApp: 7d4006751de8bb5cafa2e8d2e7d94ee250df81db
+  RNFBMessaging: 51cc7f6beaf4c4feac6f18ea941bba5854e3d9c6
   RNFileViewer: b815b353fdc08552766c6325e5b66ff52bb6b7af
   RNFS: 0d4191b1052bef9ce70deff00a5b4169c62bbd9b
   RNGestureHandler: 02905abe54e1f6e59c081a10b4bd689721e17aa6
@@ -519,6 +520,6 @@ SPEC CHECKSUMS:
   RNVectorIcons: 0bb4def82230be1333ddaeee9fcba45f0b288ed4
   Yoga: f2a7cd4280bfe2cca5a7aed98ba0eb3d1310f18b
 
-PODFILE CHECKSUM: fd49fc1a41ba07d6ffabc45ed8559d4b4a35d86b
+PODFILE CHECKSUM: 0a408b586c4c3e0f93d076ce07ba3f531b41bfab
 
 COCOAPODS: 1.8.4

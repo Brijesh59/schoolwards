@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, StyleSheet, Keyboard } from 'react-native'
 import { Actions }  from 'react-native-router-flux';
 import AsyncStorage from '@react-native-community/async-storage';
 import DeviceInfo   from 'react-native-device-info';
@@ -10,8 +10,6 @@ import {addStudentsAndEventsUponLogin}     from '../utils/functions'
 import CustomButton   from '../components/common/CustomButton'
 import Input          from '../components/common/Input'
 import NetworkRequest from '../utils/NetworkRequest';
-import {deleteAllData} from '../db'
-
 
 const VerifyOTP = (props) => {
     const [isLoading, setIsLoding] = useState(false);
@@ -69,6 +67,7 @@ const VerifyOTP = (props) => {
     }, [fifthDigit])
 
     const loginToDashboard = async() => {
+        Keyboard.dismiss()
         setIsLoding(true)
         const OTP = firstDigit + secondDigit + thirdDigit + fourthDigit + fifthDigit + sixthDigit
         
@@ -79,17 +78,19 @@ const VerifyOTP = (props) => {
         formData.append('otp', OTP)
         formData.append('app_version', app_config.version)
         formData.append('appname', app_config.schoolName)
+
         
         const networkRequest = new NetworkRequest
         const data = await networkRequest.verifyOTP(formData)
-        setIsLoding(false)
+        //setIsLoding(false)
         if(data.response === 'success'){
             console.log('Login Success.') 
-            await AsyncStorage.setItem('isUserLoggedIn', 'true')
             await AsyncStorage.setItem('mobile', mobileNo)
-            const isSaved = await addStudentsAndEventsUponLogin(data.students, data.common_events)
+            const isSaved = await addStudentsAndEventsUponLogin(data.students, data.common_events, data.common_events_response)
+            setIsLoding(false)
             if(!isSaved){
-                setShowErrorMessage('Something went wrong!\nPlease try again ...')
+                console.log('Data could not be saved upon login.') 
+                setShowErrorMessage('Something Went Wrong.\nPlease try login again.')
                 return 
             }
             
@@ -99,14 +100,20 @@ const VerifyOTP = (props) => {
             formData.append('device_id', fcmToken)
             formData.append('appname', app_config.schoolName)
             const response = await networkRequest.updateFCMToken(formData)
-            if(response.status === 'success')
+            if(response.status === 'success'){
+                console.log('FCM Token Updated on the server') 
+                await AsyncStorage.setItem('isUserLoggedIn', 'true')
                 Actions.dashboard()
-            else
-                setShowErrorMessage(response.status)
+            } 
+            else{
+                console.log('FCM Token failed to Update on the server ...') 
+                setShowErrorMessage('Something Went Wrong.\nPlease try login again.')
+            }      
         }
         else{
-            console.log('Login Failed => ', data)
-            setShowErrorMessage(data)  
+            console.log('Login Failed => ', data.toString())
+            setIsLoding(false)
+            setShowErrorMessage(data.response)  
         }
     } 
 

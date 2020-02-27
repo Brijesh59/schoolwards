@@ -91,6 +91,24 @@ export default function AnnouncementDetails(props) {
                         </Text>
                     </Body>
                 </CardItem>
+                <CardItem >
+                    <Body>
+                        {
+                            details.venue ? 
+                            <Text style={styles.description}>
+                                Venue: {details.venue}
+                            </Text>
+                            : null
+                        }
+                        {
+                            details.dateTime ? 
+                            <Text style={styles.description}>
+                                Start Date: {formatDateTime(details.dateTime)}
+                            </Text>
+                            : null
+                        }
+                    </Body>
+                </CardItem>
                 <CardItem>
                     <Left>
                         { 

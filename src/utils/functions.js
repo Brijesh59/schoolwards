@@ -2,7 +2,7 @@ import RNFetchBlob from 'rn-fetch-blob'
 import AsyncStorage from '@react-native-community/async-storage'
 import app_config from './config'
 import NetworkRequest from './NetworkRequest'
-import {addEvents, addStudents, updateEventAttatchmentUri, getAllStudents, getAllEvents, getEventById} from '../db'
+import {addEvents, addStudents, updateEventAttatchmentUri, getAllStudents, getAllEvents, getEventById, updateEventInteraction} from '../db'
 
 export function formatDateTime(dateTime = '2020-02-22 15:10:00'){
     /* Input Date Format: = '2020-02-22 15:10:00' */
@@ -76,7 +76,6 @@ export function convertObjToArray(obj){
 
 export async function getData(){
     /* Returns an Object like: { students: [], events: [] } */
-    console.log('Getdata fn called')
     try{
         const students = await getAllStudents()
         const events = await getAllEvents()
@@ -87,49 +86,23 @@ export async function getData(){
         return dataToSave
     }
     catch(error){
-        console.log(error)
+        console.log('Error in getData(): ', error)
         return { students: [], events: [] }
     }
-   
-    // const cachedData = await AsyncStorage.getItem('cachedData')
-    // if(cachedData)
-    //     return JSON.parse(cachedData)
-    // return { students: [], events: [] }
 }
 
 export async function getStudentsList(){
-    console.log('getStudentsList fn called')
     const students = await getAllStudents()
     return convertObjToArray(students)
 }
 
 export async function getEvent(eventId){
-    // const cachedData = await AsyncStorage.getItem('cachedData')
-    // const data = JSON.parse(cachedData)
-    // return data.events.find(event => event.id === eventId)
-    console.log('getEvent fn called')
     const event = await getEventById(eventId)
     return event["0"]
-
 }
 
-// export async function addEvent(event){
-//     const eventDataToSave = {
-//         ...event
-//     }
-//     const cachedData = await AsyncStorage.getItem('cachedData')
-//     const data = JSON.parse(cachedData)
-//     const students = [...data.students]
-//     const events = [eventDataToSave, ...data.events]
-//     const dataToSave = {
-//         students: students,
-//         events: events
-//     } 
-//     await AsyncStorage.setItem('cachedData', JSON.stringify(dataToSave))
-// }
+export async function addStudentsAndEventsUponLogin(students, commonEvents, commonEventsResponse){
 
-export async function addStudentsAndEventsUponLogin(students, commonEvents){
-    console.log('addStudentsAndEventsUponLogin fn called')
     const studentsData = []
     const eventsData = []
     try{
@@ -168,11 +141,13 @@ export async function addStudentsAndEventsUponLogin(students, commonEvents){
             student.events.forEach(event => {
                 const NIA_NDA = event.non_interaction_attributes.non_display_attributes
                 const NIA_DA  = event.non_interaction_attributes.display_attributes
+                const IA_NDA = event.interaction_attributes.non_display_attributes
+                const IA_INTERACTIONS   = event.interaction_attributes.interactions
                 eventsData.push({
                     id: NIA_NDA.id,
                     title: NIA_DA.name,
                     description: NIA_DA.description,
-                    type: NIA_DA.series,
+                    type: NIA_DA.series ? NIA_DA.series : 'Event',
                     to: 'individual',
                     createdOn: NIA_DA.created_on,
                     dateTime: NIA_DA.date_time,
@@ -181,8 +156,17 @@ export async function addStudentsAndEventsUponLogin(students, commonEvents){
                     venue: NIA_DA.venue,
                     studentName: studentName,
                     studentId: studentId,
-                    isDeleted: false
+                    isDeleted: false,
+                    interactionSubmitUrl: IA_NDA.submit_url,
+                    interactionTypeYes: JSON.stringify(IA_INTERACTIONS.yes),
+                    interactionTypeNo: JSON.stringify(IA_INTERACTIONS.no),
+                    interactionTypeMaybe: JSON.stringify(IA_INTERACTIONS.maybe),
+                    interactionResponse: ''
                 })
+            })
+            student.events_response && student.events_response.forEach(eventResponse => {
+                const data = eventsData.find(e => e.id === eventResponse.event_id)
+                data.interactionResponse = eventResponse.response
             })
         })
 
@@ -190,11 +174,13 @@ export async function addStudentsAndEventsUponLogin(students, commonEvents){
         commonEvents.forEach(event => {
             const NIA_NDA = event.non_interaction_attributes.non_display_attributes
             const NIA_DA  = event.non_interaction_attributes.display_attributes
+            const IA_NDA = event.interaction_attributes.non_display_attributes
+            const IA_INTERACTIONS   = event.interaction_attributes.interactions
             eventsData.push({
                 id: NIA_NDA.id,
                 title: NIA_DA.name,
                 description: NIA_DA.description,
-                type: NIA_DA.series,
+                type: NIA_DA.series ? NIA_DA.series : 'Event',
                 to: 'all',
                 createdOn: NIA_DA.created_on,
                 dateTime: NIA_DA.date_time,
@@ -203,8 +189,18 @@ export async function addStudentsAndEventsUponLogin(students, commonEvents){
                 venue: NIA_DA.venue,
                 studentName: '',
                 studentId: '',
-                isDeleted: false
+                isDeleted: false,
+                interactionSubmitUrl: IA_NDA.submit_url,
+                interactionTypeYes: JSON.stringify(IA_INTERACTIONS.yes),
+                interactionTypeNo: JSON.stringify(IA_INTERACTIONS.no),
+                interactionTypeMaybe: JSON.stringify(IA_INTERACTIONS.maybe),
+                interactionResponse: ''
             })
+        })
+
+        commonEventsResponse.forEach(eventResponse => {
+            const data = eventsData.find(e => e.id === eventResponse.event_id)
+            data.interactionResponse = eventResponse.response
         })
 
         await addStudents(studentsData)
@@ -219,26 +215,16 @@ export async function addStudentsAndEventsUponLogin(students, commonEvents){
 }
 
 export async function updateEventAttatchment(eventId, attatchmentUri){
-    // const cachedData = await AsyncStorage.getItem('cachedData')
-    // const data = JSON.parse(cachedData)
-    // const students = [...data.students]
-    // const events = [...data.events]
-    // events.map(event => {
-    //     if(event.id === eventId){
-    //         event.attatchment = attatchmentUri
-    //     }
-    // })
-    // const dataToSave = {
-    //     students: students,
-    //     events: events
-    // }
-    // await AsyncStorage.setItem('cachedData', JSON.stringify(dataToSave))
-    
     await updateEventAttatchmentUri(eventId, attatchmentUri)
 }
 
+export async function updateEventInteractionResponse(eventId, response){
+    const data = await updateEventInteraction(eventId, response)
+    return data
+}
+
 export async function cachePayloadData(){
-    console.log('cachePayloadData fn called')
+
     const [mobile, fcmToken] = await AsyncStorage.multiGet(["mobile", "fcmToken"])
     const networkRequest = new NetworkRequest()
     const formData = new FormData()
@@ -256,7 +242,6 @@ export async function cachePayloadData(){
       await addEvents(events)
 
       // Notify the server that Notification has been recieved ...
-      console.log("JSON.stringify: ", JSON.stringify(objects))
       const formData2 = new FormData()
       formData2.append('mobile_no',  mobile[1])
       formData2.append('device_id', fcmToken[1])
@@ -312,7 +297,7 @@ export async function cacheFile(uri, type = 'png'){
 }
 
 async function fetchEachEvent(pendingObjects){
-    console.log('fetchEachEvent fn called')
+    
     const networkRequest = new NetworkRequest()
     const events = []
     const objects = []
@@ -320,14 +305,16 @@ async function fetchEachEvent(pendingObjects){
         console.log("Each Pending Object: ", obj)
         const data = await networkRequest.getEvent(obj.type, obj.id)
         console.log('Event data: ', JSON.stringify(data))
-        if(data){ 
+        if(data && data.non_interaction_attributes){ 
             const NIA_NDA = data.non_interaction_attributes.non_display_attributes
             const NIA_DA  = data.non_interaction_attributes.display_attributes  
+            const IA_NDA  = data.interaction_attributes
+            const IA_INTERACTIONS = data.interaction_attributes
             events.push({
                 id: NIA_NDA.id,
-                title: NIA_DA.title,
-                description: NIA_DA.body || NIA_DA.desc || '',
-                type: NIA_DA.series,
+                title: NIA_DA.title || NIA_DA.name || '',
+                description: NIA_DA.body || NIA_DA.desc || NIA_DA.description || '',
+                type: NIA_DA.series ? NIA_DA.series : 'Event',
                 to: obj.object_type ==='common' ? 'all' : 'individual',
                 createdOn: NIA_DA.created_on,
                 dateTime: NIA_DA.date_time || '',
@@ -336,7 +323,12 @@ async function fetchEachEvent(pendingObjects){
                 venue: NIA_DA.venue || '',
                 studentName: obj.student_name || '',
                 studentId: obj.student_id || '',
-                studentPrnNo: obj.prn_no || ''
+                studentPrnNo: obj.prn_no || '',
+                interactionSubmitUrl: IA_NDA ? IA_NDA.non_display_attributes.submit_url : '',
+                interactionTypeYes: IA_INTERACTIONS ? JSON.stringify(IA_INTERACTIONS.interactions.yes) : '',
+                interactionTypeNo: IA_INTERACTIONS ? JSON.stringify(IA_INTERACTIONS.interactions.no) : '',
+                interactionTypeMaybe: IA_INTERACTIONS ? JSON.stringify(IA_INTERACTIONS.interactions.maybe) : '',
+                interactionResponse: ''
             })
             objects.push({
                 id: obj.id,
@@ -348,4 +340,19 @@ async function fetchEachEvent(pendingObjects){
         }
     }
     return [events, objects]
+}
+
+export async function postInteractionDetails(details, url) {
+    const [mobile, fcmToken] = await AsyncStorage.multiGet(["mobile", "fcmToken"])
+    const formData = new FormData()
+    formData.append('type', details.type)
+    formData.append('id', details.eventId)
+    formData.append('student_id', details.student_id)
+    formData.append('tag_name', details.tag_name)
+    formData.append('device_id', fcmToken[1])
+    formData.append('mobile_no', mobile[1])
+    formData.append('appname', app_config.schoolName)
+    const networkRequest = new NetworkRequest()
+    const data = await networkRequest.updateInteractionStatus(formData, url)
+    return data
 }
