@@ -10,7 +10,7 @@ import {formatDateTime, postInteractionDetails, updateEventInteractionResponse} 
 import config from '../../utils/config'
 import {getEventById} from '../../db'
 
-export default function CustomCard({id, title, type, description, to, studentName, createdOn, onCardPressed, attatchment, attatchmentExtention, updateHomeState, interactionAttributes, interactionSubmitUrl, interactionResponse}) {
+export default function CustomCard({id, title, type, description, to, studentName, createdOn, onCardPressed, attatchment, attatchmentExtention, updateHomeState, updateInteraction, updateAttatchment, interactionAttributes, interactionSubmitUrl, interactionResponse}) {
 
     const [isAttatchDownloadSuccess, setIsAttatchDownloadSuccess] = useState(false)
     const [downloading, setDownloading] = useState(false)
@@ -48,7 +48,6 @@ export default function CustomCard({id, title, type, description, to, studentNam
     }
     
     const handleAttatchmentOpen = () => {
-        console.log('Open')
         FileViewer.open(attatchment)
             .then(res => {})
             .catch(error => {})
@@ -61,7 +60,7 @@ export default function CustomCard({id, title, type, description, to, studentNam
             await updateEventAttatchment(id, data.filePath) 
             setIsAttatchDownloadSuccess(true)
             setDownloading(false)
-            updateHomeState()  
+            updateAttatchment()  
         }
         else{
             setIsAttatchDownloadSuccess(false)
@@ -83,20 +82,16 @@ export default function CustomCard({id, title, type, description, to, studentNam
         const data = await postInteractionDetails(details, interactionSubmitUrl)
         console.log('Data from postInteractionDetails: ', data)
         const updatedEvent = await updateEventInteractionResponse(details.eventId, details.tag_name)
-        // getEventById(details.eventId)
-        //     .then(data => console.log("GET:/", data))
-        //     .catch(error => console.log("ERR:/", error))
         setUpdateInteractionResponse(false)
         setSelectedInteraction(null)
         if(updatedEvent.interactionResponse === details.tag_name){
            console.log('Updated sucessfully')
-           await updateHomeState()
+           updateInteraction(updatedEvent)
         }
         else{
             console.log('Something went worng. Please try again')
             Alert.alert('Something went worng. Please try again.')
         }
-
     }
 
     const openAttatchment = 
@@ -152,7 +147,8 @@ export default function CustomCard({id, title, type, description, to, studentNam
                 </>
         </Button>
     ) : null
-
+    
+    console.log('Custom Card Rerendered ...', title, interactionResponse)
     return (
         <View>
             <Card style={styles.container} >

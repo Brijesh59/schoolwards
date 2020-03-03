@@ -46,7 +46,7 @@ export const getStudentById = (studentId) => new Promise((resolve, reject) => {
         .then(realm => {
             const students = realm.objects(STUDENT_SCHEMA)
             const filteredStudents = students.filtered(`studentId = "${studentId}" AND isDeleted = false`)
-            resolve(filteredStudents)
+            resolve({...filteredStudents})
         })
         .catch(error => reject(error))
 })
@@ -56,7 +56,7 @@ export const getAllStudents = () => new Promise((resolve, reject) => {
         .then(realm => {
             const data = realm.objects(STUDENT_SCHEMA)
             const students = data.filtered(`isDeleted = false`)
-            resolve(students)
+            resolve({...students})
         })
         .catch(error => reject(error))
 })
@@ -102,7 +102,7 @@ export const getEventById = eventId => new Promise((resolve, reject) => {
         .then(realm => {
             const events = realm.objects(EVENT_SCHEMA)
             const filteredEvent = events.filtered(`id = "${eventId}" AND isDeleted = false`)
-            resolve(filteredEvent)
+            resolve({...filteredEvent})
         })
         .catch(error => reject(error))
 })
@@ -112,7 +112,7 @@ export const getEventsByStudentName = studentName => new Promise((resolve, rejec
     .then(realm => {
         const events = realm.objects(EVENT_SCHEMA)
         const filteredEvents = events.filtered(`studentName = "${studentName}" AND isDeleted = false`)
-        resolve(filteredEvents)
+        resolve({...filteredEvents})
     })
     .catch(error => reject(error))
 })
@@ -122,7 +122,7 @@ export const getAllEvents = () => new Promise((resolve, reject) => {
         .then(realm => {
             const data = realm.objects(EVENT_SCHEMA)
             const events = data.filtered(`isDeleted = false`)
-            resolve(events)
+            resolve({...events})
         })
         .catch(error => reject(error))
 })
@@ -133,7 +133,7 @@ export const updateEventAttatchmentUri = (eventId, attatchmentUri) => new Promis
         realm.write(()=>{
             let eventToUpdate = realm.objectForPrimaryKey(EVENT_SCHEMA, eventId)
             eventToUpdate.attatchment = attatchmentUri
-            resolve(eventToUpdate)
+            resolve({...eventToUpdate})
         }) 
     })
     .catch(error => reject(error))
@@ -145,8 +145,7 @@ export const updateEventInteraction = (eventId, interactionResponse) => new Prom
         realm.write(()=>{
             let eventToUpdate = realm.objectForPrimaryKey(EVENT_SCHEMA, eventId)
             eventToUpdate.interactionResponse = interactionResponse
-            console.log('Updated value: ', realm.objectForPrimaryKey(EVENT_SCHEMA, eventId).interactionResponse)
-            resolve(eventToUpdate)
+            resolve({...eventToUpdate})
         }) 
     })
     .catch(error => reject(error))

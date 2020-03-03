@@ -109,10 +109,20 @@ export default class FirebaseConfig{
     }
     else{
       console.log('Notification Recieved ...')
-      PushNotificationIOS.presentLocalNotification({
-        alertTitle: payload,
-        isSilent: notification[1]==='true' ? true : false
-      });
+      //PushNotificationIOS.requestPermissions()
+      // PushNotificationIOS.presentLocalNotification({
+      //   alertTitle: payload,
+      //   alertBody: payload,
+      //   isSilent: notification[1]==='true' ? true : false
+      // });
+      PushNotificationIOS.requestPermissions().then((permissions) => {
+        console.log(permissions)
+        PushNotificationIOS.getInitialNotification({
+          alertTitle: payload,
+          alertBody: payload,
+          isSilent: notification[1]==='true' ? true : false
+        });
+      })
     }  
   }
 

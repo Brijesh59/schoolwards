@@ -118,6 +118,32 @@ export default class Home extends React.Component{
         return student.length > 0 ? student[0].firstName : ''
     }
 
+    updateInteraction = (interactionEvent) => {
+        console.log('Inside Home updateInteraction')
+        const events = JSON.parse(JSON.stringify(this.state.events)) 
+        events.forEach(event => {
+            if(event.id === interactionEvent.id){
+                console.log('Condition Matched: ', event)
+                event.interactionResponse = interactionEvent.interactionResponse
+                console.log('Event Updated in Home')
+            }
+        })
+        this.setState({events})
+    }
+
+    updateAttatchment = (attatchmentEvent) => {
+        console.log('Inside Home updateAttatchment')
+        const events = JSON.parse(JSON.stringify(this.state.events)) 
+        events.forEach(event => {
+            if(event.id === interactionEvent.id){
+                console.log('Condition Matched: ', event)
+                event.attatchment = interactionEvent.attatchment
+                console.log('Event Updated in Home')
+            }
+        })
+        this.setState({events})
+    }
+
     updateState = async() => {
         console.log("Updating the Home state ...")
         const JSONDATA = await getData()
@@ -345,6 +371,8 @@ export default class Home extends React.Component{
                                 attatchment={event.attatchment}
                                 attatchmentExtention={event.attatchmentExtention}
                                 updateHomeState={()=>this.updateState()}
+                                updateInteraction={(updatedEvent)=>this.updateInteraction(updatedEvent)}
+                                updateAttatchment={(updatedEvent)=>this.updateInteraction(updatedEvent)}
                                 interactionAttributes={[
                                     event.interactionTypeYes,
                                     event.interactionTypeMaybe,
@@ -531,7 +559,7 @@ export default class Home extends React.Component{
                     <Container> 
                         {header}
                         <View style={styles.content}>
-                            {!this.state.pendingDataLoaded && <DataLoader />}
+                            {/* {!this.state.pendingDataLoaded && <DataLoader />} */}
                             { this.state.events.length > 0 ?
                                 mainContent :
                                 <ActivityLoader />

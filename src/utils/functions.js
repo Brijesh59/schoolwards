@@ -80,8 +80,8 @@ export async function getData(){
         const students = await getAllStudents()
         const events = await getAllEvents()
         const dataToSave = {
-            students: convertObjToArray(students),
-            events: convertObjToArray(events)
+            students: [...convertObjToArray(students)],
+            events: [...convertObjToArray(events)]
         }
         return dataToSave
     }
@@ -249,8 +249,8 @@ export async function cachePayloadData(){
       formData2.append('appname', app_config.schoolName)
       await networkRequest.updateRecievePushStatus(formData2) 
     }
-    else{
-        console.log("Invalid Device ID ")
+    else if(data.device_valid === 'no'){
+        console.log("Invalid Device ID. Loggin you out ...")
         return 'failure'
     }
       
