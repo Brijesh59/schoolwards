@@ -1,11 +1,11 @@
 import React from 'react'
-import {StyleSheet, TouchableOpacity, FlatList, View, Alert, AppState} from 'react-native'
+import {StyleSheet, TouchableOpacity, FlatList, View, Alert, AppState } from 'react-native'
 import Modal from 'react-native-modal'
 import { Container, Left, Button, Title, Body, Right, Header, Drawer, Text, Radio, ListItem, CheckBox } from 'native-base'
 import { Actions }  from 'react-native-router-flux'
 import AsyncStorage from '@react-native-community/async-storage'
-import firebase from '@react-native-firebase/app';
-import '@react-native-firebase/messaging';
+import firebase from '@react-native-firebase/app'
+import '@react-native-firebase/messaging'
 
 import FirebaseConfig from '../utils/Firebase'
 import {cachePayloadData} from '../utils/functions'
@@ -18,11 +18,14 @@ import config from '../utils/config'
 import {getData} from '../utils/functions'
 import NetworkRequest from '../utils/NetworkRequest'
 import {deleteAllData, deleteUnusedData} from '../db'
-import DataLoader from '../components/common/DataLoder'
 
 export default class Home extends React.Component{
 
+    openDrawer  = () => this._drawer._root.open()  
+    closeDrawer = () => this._drawer._root.close()    
+
     state = {
+        loading: true,
         appState: AppState.currentState,
         pendingDataLoaded: false,
         showToast: false,
@@ -50,15 +53,15 @@ export default class Home extends React.Component{
         await this.getCachedData() 
         this.handleSort()
 
-
-        /* Check if user logged in to other device, if yes, then logout from
+        /*
+           Check if user logged in to other device, if yes, then logout from
            current device & redirect to login screen.
            Else, cache any pending contents  
         */
         const status = await cachePayloadData()
         if(status === 'failure'){
             await AsyncStorage.setItem('isUserLoggedIn', 'false')
-            await this.firebase.sendLocalNotification('You have signed in from another device.\nHence you are being logged out.');
+            await this.firebase.sendLocalNotification('You have signed in from another device.\nHence you are being logged out.')
             await deleteAllData() // delete all cached data
             Actions.auth()
             return
@@ -73,18 +76,18 @@ export default class Home extends React.Component{
             const status = await cachePayloadData()
             if(status === 'failure'){
                 await AsyncStorage.setItem('isUserLoggedIn', 'false')
-                await this.firebase.sendLocalNotification('You have signed in from another device.\nHence you are being logged out.');
+                await this.firebase.sendLocalNotification('You have signed in from another device.\nHence you are being logged out.')
                 await deleteAllData()    
                 Actions.auth()
-                return;
+                return
             }
             else{
                 const JSONData = JSON.parse(remoteMessage.data.note)
                 const payload  = JSONData.non_interaction_attributes.display_attributes
-                await this.updateState();
-                await this.firebase.sendLocalNotification(payload.title);
+                await this.updateState()
+                await this.firebase.sendLocalNotification(payload.title)
             }
-        });
+        })
 
         const mobile = await AsyncStorage.getItem('mobile')
         this.unSubscribeFromTokenRefresh = this.firebase.onFirebaseTokenRefresh(mobile) 
@@ -97,7 +100,7 @@ export default class Home extends React.Component{
 
     componentWillUnmount(){
         AppState.removeEventListener('change', this.handleAppStateChange)
-        this.unsubscribe && this.unsubscribe();
+        this.unsubscribe && this.unsubscribe()
         this.unSubscribeFromTokenRefresh && this.unSubscribeFromTokenRefresh()
     }
 
@@ -109,7 +112,8 @@ export default class Home extends React.Component{
             events: JSONData.events, 
             students: JSONData.students, 
             selectedStudents, 
-            selectedStudentsApplied 
+            selectedStudentsApplied,
+            loading: false 
         })
     }
 
@@ -170,7 +174,7 @@ export default class Home extends React.Component{
             const status = await cachePayloadData()
             if(status === 'failure'){
                 await AsyncStorage.setItem('isUserLoggedIn', 'false')
-                await this.firebase.sendLocalNotification('You have signed in from another device.\nHence you are being logged out.');
+                await this.firebase.sendLocalNotification('You have signed in from another device.\nHence you are being logged out.')
 
                 await deleteAllData()    
                 Actions.auth()
@@ -182,9 +186,6 @@ export default class Home extends React.Component{
             appState: nextAppState
         })
     }
-
-    closeDrawer = () => { this._drawer._root.close() }
-    openDrawer  = () => { this._drawer._root.open()  } 
     
     sortListNewToOld = () => { 
         this.setState({
@@ -263,14 +264,14 @@ export default class Home extends React.Component{
                                 eventA.createdOn > eventB.createdOn
                             )
                 this.setState({events, showSortModal: false}) 
-                break;
+                break
             case 'newToOld':
                 events = [...this.state.events]
                             .sort((eventA, eventB) => 
                                 eventA.createdOn < eventB.createdOn
                             )
                 this.setState({events, showSortModal: false})
-                break;
+                break
         }
 
     }
@@ -343,7 +344,7 @@ export default class Home extends React.Component{
                 </Right>
             </Header>
 
-        const mainContent = this.state.events.length > 0 && 
+        const mainContent = this.state.events.length > 0 ? 
             <FlatList 
                 data={filteredEvents}
                 renderItem={
@@ -386,15 +387,16 @@ export default class Home extends React.Component{
                 }
                 keyExtractor={(card, index) => index.toString()}
             />
+            : 'No Event Found'
         
         const sortModal = 
             <View style={{flex: 1}}>
                     <Modal 
                         isVisible={this.state.showSortModal}
-                        animationIn='zoomIn'
-                        animationOut="zoomOut"
-                        animationInTiming={200}
-                        animationOutTiming={200}
+                        animationIn='slideInDown'
+                        animationOut="slideOutUp"
+                        // animationInTiming={200}
+                        // animationOutTiming={200}
                          backdropTransitionOutTiming={0}
                         onBackdropPress={()=>this.setState({showSortModal: false})}>
                         <View style={styles.modalContent}>     
@@ -448,8 +450,8 @@ export default class Home extends React.Component{
             <View style={{flex: 1}}>
                 <Modal 
                     isVisible={this.state.showFilterModal}
-                    animationIn='zoomIn'
-                    animationOut="zoomOut"
+                    animationIn='slideInDown'
+                    animationOut="slideOutUp"
                     animationInTiming={200}
                     animationOutTiming={200}
                     backdropTransitionOutTiming={0} // Remove flicker
@@ -551,7 +553,7 @@ export default class Home extends React.Component{
         return (
             <Container>
                 <Drawer 
-                    ref = { (ref) => { this._drawer = ref } } 
+                    ref = {ref => { this._drawer = ref } } 
                     content = { 
                         <SideBar navigator={this._navigator} />
                     }
@@ -560,8 +562,14 @@ export default class Home extends React.Component{
                         {header}
                         <View style={styles.content}>
                             {/* {!this.state.pendingDataLoaded && <DataLoader />} */}
-                            { this.state.events.length > 0 ?
-                                mainContent :
+                            { !this.state.loading 
+                                ?
+                                (
+                                    filteredEvents.length > 0 ?
+                                    mainContent :
+                                    <Text>{mainContent}</Text>
+                                )
+                                :
                                 <ActivityLoader />
                             }
                             { sortModal }
@@ -620,5 +628,5 @@ const styles = StyleSheet.create({
     center: {
         alignItems: 'center',
     }
-});
+})
   

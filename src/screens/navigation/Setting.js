@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react'
-import {StyleSheet, TouchableOpacity, View, ScrollView, Linking, Platform} from 'react-native'
+import { StyleSheet, TouchableOpacity, View, ScrollView, Linking, Platform } from 'react-native'
 import Modal from 'react-native-modal'
 import { Container, Content, Text, Switch, Radio } from 'native-base'
-import { Actions }  from 'react-native-router-flux'
+import Sound from 'react-native-sound'
 import AsyncStorage from '@react-native-community/async-storage'
 import CustomHeader from '../../components/common/CustomHeader'
 import CustomButton from '../../components/common/CustomButton'
 import config from '../../utils/config'
+
+const notificationToneList = ["Default", "Arrow", "Bongo", "Car Lock", "Chess", "Crystal Drop", "Facebook Pop", "Flash", "Guitar", "Mushroom", "Old Bicycle", "Pixies", "Play", "Shimmer", "Step"]
 
 export default function Setting() {
     const [notificationSound, setNotificationSound] = useState(null)
@@ -14,7 +16,7 @@ export default function Setting() {
     const [showNotificationToneModal, setShowNotificationToneModal] = useState(false)
     const [activeTone, setActiveTone] = useState('Default')
     const [activeToneApplied, setActiveToneApplied] = useState('Default')
-
+    let sound = null
     // useEffect(()=>{
     //     console.log('Change in notification')
     //     const save = async() => {
@@ -37,19 +39,21 @@ export default function Setting() {
         const save = async() => {
             let notification = await AsyncStorage.getItem('notification')
             let vibration =    await AsyncStorage.getItem('vibration')
+            let notificationTone =    await AsyncStorage.getItem('notificationTone')
             console.log("notification before", notification)
             console.log("vibration before", vibration)
             notification = notification === null ? true : notification === 'true'
+            notificationTone = notificationTone === null ? 'Default' : notificationTone
             vibration =    vibration    === null ? true : vibration === 'true'
             console.log("notification", notification)
             console.log("vibration", vibration)
             setNotificationSound(notification)
             setVibration(vibration)
+            setActiveTone(notificationTone)
+            setActiveToneApplied(notificationTone)
         }
         save() 
     },[])
-
-    const notificationToneList = ["Default", "Arrow", "Bongo", "Car Lock", "Chess", "Crystal Drop", "Facebook Pop", "Flash", "Guitar", "Mushroom", "Old Bicycle", "Pixies", "Play", "Shimmer", "Step"]
 
     const handleNotificationSound = async() => {
         await AsyncStorage.setItem('notification', `${!notificationSound}`)
@@ -62,15 +66,40 @@ export default function Setting() {
     }
 
     const handleToneChange = (tone) => {
-       // e.stopPropagation()
+        console.log('Sound: ', sound)
+        if(sound){
+            console.log('Stopping the sound.')
+            sound.stop('sajni.mp3', ()=>{
+                console.log('Stopped Sound')
+            })
+        }
         setActiveTone(tone)
-        console.log('2', showNotificationToneModal)
+        sound = new Sound('sajni.mp3', Sound.MAIN_BUNDLE, (error) => {
+            if (error) {
+              console.log('failed to load the sound', error);
+              return;
+            }
+            // loaded successfully
+            console.log('duration in seconds: ' + sound.getDuration() + 'number of channels: ' + sound.getNumberOfChannels());
+          
+            // Play the sound with an onEnd callback
+            sound.play((success) => {
+                if (success) {
+                    console.log('successfully finished playing');
+                } else {
+                    console.log('playback failed due to audio decoding errors');
+                }
+            });
+          });
+        console.log('Sound after: ', sound)  
+        
+          
     }
 
-    const handleToneApply = () => {
+    const handleToneApply = async() => {
         setActiveToneApplied(activeTone)
         setShowNotificationToneModal(false)
-        console.log('applied')
+        await AsyncStorage.setItem('notificationTone', activeTone)
     }
 
     const handleNotificationToneModalCancel = () => {
@@ -90,8 +119,8 @@ export default function Setting() {
     const NotificationToneModal = 
         <Modal 
             isVisible={showNotificationToneModal}
-            animationIn='zoomIn'
-            animationOut="zoomOut"
+            animationIn='slideInDown'
+            animationOut="slideOutUp"
             animationInTiming={400}
             animationOutTiming={400}
             backdropTransitionOutTiming={0} // Remove flicker
@@ -160,20 +189,20 @@ export default function Setting() {
                 <Header text="General" />
                 <Divider />
                 <View style={styles.group}>
-                    <Title text="Notification Sound" />
+                    <Title text="Notification Sound" style={{paddingBottom: 10}}/>
                     <Switch 
                         value={notificationSound}
                         trackColor={`rgba(44, 150, 234, 0.28)`}
                         thumbColor={`rgba(44, 150, 234, 1)`}
-                        style={{ marginTop: 10, }}
+                        style={{ marginTop: 10, marginBottom: 10 }}
                         onValueChange={handleNotificationSound}
                     />
                 </View> 
-                {/* <Title text="Notification Tone" />    
+                <Title text="Notification Tone" />    
                 <TouchableOpacity onPress={()=>setShowNotificationToneModal(true)}>
                     <SubTitle text={activeToneApplied} style={{paddingBottom: 5}}/>  
                     <SubTitle text="Choose from Files" />
-                </TouchableOpacity>     */}
+                </TouchableOpacity>    
                 <Divider />
                 <View style={styles.group}>
                     <Title text="Vibration" />
@@ -193,7 +222,7 @@ export default function Setting() {
                     // Linking.openURL("itms://itunes.apple.com/us/app/apple-store/myiosappid?mt=8") 
                     null
                 }>
-                    <Title text="Rate Us" style={{paddingBottom: 10}}/>
+                    <Title text="Rate Us" style={{marginTop: 5, paddingBottom: 15}}/>
                 </TouchableOpacity>
                 <Divider />
                 <Title  text="Licences" />

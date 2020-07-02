@@ -3,10 +3,8 @@ import { View, StyleSheet, Image } from 'react-native'
 import { Actions } from 'react-native-router-flux'
 import AsyncStorage from '@react-native-community/async-storage'
 import * as Progress from 'react-native-progress'
-import config from '../utils/config'
-import NetworkRequest from '../utils/NetworkRequest'
-import FirebaseConfig from '../utils/Firebase'
 
+import config from '../utils/config'
 const schoolLogo = '../assets/schoolLogo.png'
 
 class SplashScreen extends Component {
@@ -29,7 +27,7 @@ class SplashScreen extends Component {
             clearInterval(loadingInterval)
 
             if(isFirstTimeUse === null){
-                Actions.onBoarding()
+                Actions.onBoardingScreeen()
             }
             else if(isUserLoggedIn === 'true'){
                 Actions.dashboard()
@@ -43,11 +41,9 @@ class SplashScreen extends Component {
     render() {
         return (
             <View style={styles.container}>
-               <Image source={require(schoolLogo)} style={{
-                    marginBottom: 20,
-                    width: 200,
-                    height: 200
-                }}/>
+               <Image 
+                    source={require(schoolLogo)} 
+                    style={styles.imgStyle} />
                <Progress.Bar 
                     progress={this.state.progress} 
                     width={250} 
@@ -70,6 +66,11 @@ const styles = StyleSheet.create({
       fontSize: 20,
       textAlign: 'center',
       margin: 10,
+    },
+    imgStyle:{
+        marginBottom: 20,
+        width: 200,
+        height: 200
     }
 })
 

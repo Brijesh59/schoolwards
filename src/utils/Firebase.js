@@ -97,32 +97,30 @@ export default class FirebaseConfig{
   }
 
   async sendLocalNotification(payload) {
-    const [notification, vibration] = await AsyncStorage.multiGet(["notification", "vibration"])
+    const [notification, vibration] = await AsyncStorage.multiGet(["notification", "notificationTone", "vibration"])
     if( Platform.OS === 'android') {
       PushNotification.localNotification({
         message: payload,
         smallIcon: 'icon.png',
         largeIcon: 'icon.png',
         vibrate: vibration[1]==='true' ? true : false,
-        playSound: notification[1]==='true' ? true : false
+        playSound: notification[1]==='true' ? true : false,
+        soundName: "default",
+        importance: "high",
+        priority: "high",
       })
     }
     else{
       console.log('Notification Recieved ...')
-      //PushNotificationIOS.requestPermissions()
-      // PushNotificationIOS.presentLocalNotification({
-      //   alertTitle: payload,
-      //   alertBody: payload,
-      //   isSilent: notification[1]==='true' ? true : false
-      // });
-      PushNotificationIOS.requestPermissions().then((permissions) => {
-        console.log(permissions)
-        PushNotificationIOS.getInitialNotification({
-          alertTitle: payload,
-          alertBody: payload,
-          isSilent: notification[1]==='true' ? true : false
-        });
-      })
+      PushNotificationIOS
+        .requestPermissions()
+        .then((permissions) => {
+          PushNotificationIOS.getInitialNotification({
+            alertTitle: payload,
+            alertBody: payload,
+            isSilent: notification[1]==='true' ? true : false
+          });
+        })
     }  
   }
 

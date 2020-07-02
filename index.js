@@ -9,7 +9,7 @@ import App from './src/components/App';
 import {name as appName} from './app.json';
 import FirebaseConfig from './src/utils/Firebase'
 import { cachePayloadData } from './src/utils/functions'
- 
+console.disableYellowBox = true 
 // firebase.messaging().setBackgroundMessageHandler( async (remoteMessage) => {
 //     let firebase = new FirebaseConfig()
 //     console.log('FCM Message Back/AppClosed :)');

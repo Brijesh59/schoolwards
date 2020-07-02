@@ -34,12 +34,10 @@ const VerifyOTP = (props) => {
     useEffect(() => {
         async function getToken(){
             const fcmToken = await AsyncStorage.getItem('fcmToken')
-            setFcmToken(fcmToken)
-           
+            setFcmToken(fcmToken) 
         }
         getToken()
         firstDigitRef.current.focus()
-       
     }, [])
 
     useEffect(() => {
@@ -65,57 +63,6 @@ const VerifyOTP = (props) => {
     useEffect(() => {
         setFocus('sixthDigit')
     }, [fifthDigit])
-
-    const loginToDashboard = async() => {
-        Keyboard.dismiss()
-        setIsLoding(true)
-        const OTP = firstDigit + secondDigit + thirdDigit + fourthDigit + fifthDigit + sixthDigit
-        
-        let formData = new FormData();
-        formData.append('mobile', mobileNo)
-        formData.append('deviceid', fcmToken)
-        formData.append('devicetype', deviceType)
-        formData.append('otp', OTP)
-        formData.append('app_version', app_config.version)
-        formData.append('appname', app_config.schoolName)
-
-        
-        const networkRequest = new NetworkRequest
-        const data = await networkRequest.verifyOTP(formData)
-        //setIsLoding(false)
-        if(data.response === 'success'){
-            console.log('Login Success.') 
-            await AsyncStorage.setItem('mobile', mobileNo)
-            const isSaved = await addStudentsAndEventsUponLogin(data.students, data.common_events, data.common_events_response)
-            setIsLoding(false)
-            if(!isSaved){
-                console.log('Data could not be saved upon login.') 
-                setShowErrorMessage('Something Went Wrong.\nPlease try login again.')
-                return 
-            }
-            
-            // if data is saved, update fcmToken(deviceId) on server
-            let formData = new FormData();
-            formData.append('mobile_no', mobileNo)
-            formData.append('device_id', fcmToken)
-            formData.append('appname', app_config.schoolName)
-            const response = await networkRequest.updateFCMToken(formData)
-            if(response.status === 'success'){
-                console.log('FCM Token Updated on the server') 
-                await AsyncStorage.setItem('isUserLoggedIn', 'true')
-                Actions.dashboard()
-            } 
-            else{
-                console.log('FCM Token failed to Update on the server ...') 
-                setShowErrorMessage('Something Went Wrong.\nPlease try login again.')
-            }      
-        }
-        else{
-            console.log('Login Failed => ', data.toString())
-            setIsLoding(false)
-            setShowErrorMessage(data.response)  
-        }
-    } 
 
     const setFocus = (focusEle) => {
         switch(focusEle){
@@ -153,6 +100,58 @@ const VerifyOTP = (props) => {
             case 'sixthDigit' : setSixthDigit(text);  break;
         }
     }
+
+    const loginToDashboard = async() => {
+        Keyboard.dismiss()
+        setIsLoding(true)
+        const OTP = firstDigit + secondDigit + thirdDigit + fourthDigit + fifthDigit + sixthDigit
+        
+        let formData = new FormData();
+        formData.append('mobile', mobileNo)
+        formData.append('deviceid', fcmToken)
+        formData.append('devicetype', deviceType)
+        formData.append('otp', OTP)
+        formData.append('app_version', app_config.version)
+        formData.append('appname', app_config.schoolName)
+        
+        const networkRequest = new NetworkRequest
+        const data = await networkRequest.verifyOTP(formData)
+
+        if(data.response === 'success'){
+            console.log('Login Success!') 
+            await AsyncStorage.setItem('mobile', mobileNo)
+
+            // Save the data to realm db
+            const isSaved = await addStudentsAndEventsUponLogin(data.students, data.common_events, data.common_events_response)
+            setIsLoding(false)
+            if(!isSaved){
+                console.log('Data could not be saved upon login.') 
+                setShowErrorMessage('Something Went Wrong.\nPlease try login again.')
+                return 
+            }
+            
+            // if data is saved, update fcmToken(deviceId) on server
+            let formData = new FormData();
+            formData.append('mobile_no', mobileNo)
+            formData.append('device_id', fcmToken)
+            formData.append('appname', app_config.schoolName)
+            const response = await networkRequest.updateFCMToken(formData)
+            if(response.status === 'success'){
+                console.log('FCM Token Updated on the server') 
+                await AsyncStorage.setItem('isUserLoggedIn', 'true')
+                Actions.dashboard()
+            } 
+            else{
+                console.log('FCM Token failed to Update on the server ...') 
+                setShowErrorMessage('Something Went Wrong.\nPlease try login again.')
+            }      
+        }
+        else{
+            console.log('Login Failed => ', data.toString())
+            setIsLoding(false)
+            setShowErrorMessage(data.response)  
+        }
+    } 
 
     return (
         <View style={styles.container}>

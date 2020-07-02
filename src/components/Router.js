@@ -27,7 +27,7 @@ class RouterComponent extends React.Component {
             case 'splashScreen':
                 BackHandler.exitApp()
                 break;
-            case 'onBoarding':
+            case 'onBoardingScreeen':
                 BackHandler.exitApp()
                 break;
             case 'auth':
@@ -62,12 +62,8 @@ class RouterComponent extends React.Component {
                             initial/>
                     
                         <Scene 
-                            key="onBoarding" 
-                            hideNavBar>
-                            <Scene 
-                                key="onBoardingScreeen" 
-                                component={OnBoarding} />
-                        </Scene>
+                            key="onBoardingScreeen" 
+                            component={OnBoarding} />
 
                         <Scene 
                             key="auth" 

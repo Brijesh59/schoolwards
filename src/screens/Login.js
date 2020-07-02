@@ -1,11 +1,10 @@
 import React, { Component } from 'react'
-import { View, Text, TextInput, StyleSheet, Keyboard } from 'react-native'
+import { View, Text, TextInput, StyleSheet, Keyboard  } from 'react-native'
 import ActivityLoader from '../components/common/ActivityLoader'
 import { Actions } from 'react-native-router-flux'
-import CustomButton from '../components/common/CustomButton'
+import Button from '../components/common/CustomButton'
 import app_config from '../utils/config'
 import NetworkRequest from '../utils/NetworkRequest'
-
 
 class Login extends Component {
 
@@ -15,23 +14,21 @@ class Login extends Component {
       value: '',
       isLoading: false,
       data: '',
+      error: ''
     }
   }
-  componentDidMount = async() => {                        
-  
-  }
-
-  onChangeText = (text) => {
+  onChangeText = (value) => {
     this.setState({
-      value: text,
-      data: ''
+      value,
+      data: '',
+      error: ''
     })  
   }
 
   sendOTP = async() => {
     Keyboard.dismiss()
     if(!this.state.value){
-      this.setState({ data: {response: "invalid_mobile"}, value: ''})
+      this.setState({ data: {response: "invalid mobile no"}, value: ''})
       return
     }
     this.setState({isLoading: true, data: ''})
@@ -44,10 +41,16 @@ class Login extends Component {
     if(data.response === 'success'){
       Actions.OTP(this.state.value);
     }
+    else if(data.includes('Network')){
+      this.setState({error: 'No internet connection found.'})
+    }
+    else{
+      this.setState({error: data.response})
+    }
   }
 
   render() {
-    console.log('Login Screen Re-rendered ...')
+    console.log('Login Screen re-rendered ...')
     return (
       <View style={styles.container}>
         <Text style={styles.title}>
@@ -57,24 +60,32 @@ class Login extends Component {
           Please enter your registered mobile number.
         </Text>
         <TextInput
-          style={{ height: 40, borderColor: 'gray', borderWidth: 1, width:'80%', textAlign:'center', marginTop: 20 }}
-          onChangeText={text => this.onChangeText(text)}
           value={this.state.value}
           numeric 
           keyboardType={'numeric'} 
           placeholder="Your 10 digit Mobile No"
           autoCompleteType="off"
+          onChangeText={this.onChangeText}
+          style={styles.inputStyle}
         />
-        <CustomButton 
+        { 
+          this.state.data.response && 
+          this.state.data.response !== 'success' && 
+          this.state.data.response.includes('invalid') &&
+          <Text style={styles.errorText}>
+            {this.state.data.response}
+          </Text> 
+        } 
+        <Button 
           title='Next'
           onPressFunction={this.sendOTP}
           style={{marginTop: 20, width:'80%'}}
           disabled={this.state.isLoading}
         />
         { this.state.isLoading && <ActivityLoader /> }
-        { this.state.data.response && this.state.data.response!='success' && 
+        { this.state.error != '' &&
           <Text style={styles.errorStyle}>
-            {this.state.data.response}
+            {this.state.error}
           </Text> 
         }   
       </View>
@@ -100,6 +111,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     margin: 10,
     color: '#808080'
+  },
+  inputStyle:{
+    height: 45, 
+    borderColor: 'gray', 
+    borderWidth: 1, 
+    width:'80%', 
+    textAlign:'center', 
+    marginTop: 20,
+    fontSize: 16 
+  },
+  errorText: {
+    width: '80%',
+    paddingTop: 5,
+    color: '#f44336',
   },
   errorStyle: {
     width: '80%',

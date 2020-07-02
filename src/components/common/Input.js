@@ -7,6 +7,7 @@ export default function Input(props) {
     return (
         <View style={ focusStyle ? styles.focusStyle : styles.root } >
             <TextInput 
+                // caretHidden={true}
                 ref={props.reference}
                 onChangeText={props.onChangeText}
                 numeric 
@@ -28,7 +29,9 @@ const styles = StyleSheet.create({
         borderColor: '#808080', 
         justifyContent: 'center',
         alignItems: "center",
-        margin: 3
+        margin: 3,
+        // borderBottomColor: 'transparent',
+        // borderBottomWidth: 3,
     },
     inputStyle:{
         fontSize: 18,
@@ -45,6 +48,6 @@ const styles = StyleSheet.create({
         alignItems: "center",
         margin: 3,
         borderBottomColor: config.secondaryColor,
-        borderBottomWidth: 3,
+        borderBottomWidth: 3
     }
 })
